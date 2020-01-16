@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="51vm.js"></script>
+    <script src="test.js"></script>
+    <script src="get_serial.js"></script>
+    <script src="hex_decoder.js"></script>
+    <script>
+
+
+        value_type = ["HEX", "DEC", "BIN"]
+        let run_interval_id = -1
+        function excute_tick(){
+            vm.next(2000)
+        }
+
+        function start_or_pause(){
+            // 0 meaning paused of stopped
+            if(run_interval_id <= 0){
+                run_interval_id = setInterval(excute_tick,1)
+                document.getElementById("btn-start").innerText = "暂停"
+            }else{
+                clearInterval(run_interval_id)
+                run_interval_id = -1
+                document.getElementById("btn-start").innerText = "继续"
+            }
+        }
+
+        function reset(){
+            if(run_interval_id > 0){
+                clearInterval(run_interval_id)
+                run_interval_id = -1
+            }
+            vm.reset()
+            document.getElementById("btn-start").innerText = "开始"
+        }
+
+        function clear_terminal(){
+            let terimal = document.getElementById("terminal-content")
+            terimal.innerText = ''
+        }
+
+        function change_type() {
+            if (this.value == null) {
+                this.value = 0
+            }
+            else {
+                this.value = (this.value + 1) % (value_type.length)
+            }
+            this.innerHTML = value_type[this.value]
+        }
+
+        function set_dom_value(dom, value, type, len_bit = 8) {
+            dom.value = value
+            let max = Math.pow(2, len_bit) - 1
+            let dec_len = max.toString(10).length
+            let hex_len = max.toString(16).length
+            let bin_len = max.toString(2).length
+            let base = 10;
+            let group = 4
+            let len = dec_len;
+
+            switch (type) {
+                case 0:
+                    base = 16
+                    len = hex_len
+                    group = 2
+                    break
+                case 1:
+                    base = 10
+                    len = dec_len
+                    group = 4
+                    break
+                case 2:
+                    base = 2
+                    len = bin_len
+                    group = 8
+                    break
+            }
+            let str = value.toString(base).toUpperCase()
+            while (str.length < len)
+                str = "0" + str
+
+            let disp = ""
+            for (let i = 0; i < str.length; ++i) {
+                if (i % group == 0 && i != 0)
+                    disp = ' ' + disp
+                disp = str[str.length - 1 - i] + disp
+
+            }
+            dom.innerHTML = disp
+        }
+
+        function combine_dom_reg(dom_id, reg, reg_bit_len = 8) {
+            let dom_value = document.querySelector(dom_id + " .value")
+            let dom_type = document.querySelector(dom_id + " .title .type")
+            dom_type.value = 0
+            dom_value.value = reg.get()
+
+            return function(){
+                if(dom_value.value != reg.get())
+                set_dom_value(dom_value, reg.get(), dom_type.value, reg_bit_len)
+            }
+        }
+
+
+        function initReg() {
+            vm.extend(get_serial())
+
+            let lookingCallback = []
+            lookingCallback.push(combine_dom_reg("#reg-a", vm.A))
+            lookingCallback.push(combine_dom_reg("#reg-b", vm.B))
+            lookingCallback.push(combine_dom_reg("#reg-sp", vm.SP))
+            lookingCallback.push(combine_dom_reg("#reg-psw", vm.PSW))
+            lookingCallback.push(combine_dom_reg("#reg-dptr", vm.DPTR, 16))
+            lookingCallback.push(combine_dom_reg("#reg-pc", vm.PC, 16))
+
+            let cells = document.querySelectorAll("#ram .row .cell");
+            for(let one of cells){
+                one.value = 0
+            }
+            let lookingRAM = function () {
+                for (let i = 0; i < vm.IRAM.length; ++i) {
+                    if(cells[i].value != vm.IRAM[i]){
+                        set_dom_value(cells[i], vm.IRAM[i], 0, 8)
+                        cells[i].classList.add("changed")
+                    }
+                }
+                for(let c of lookingCallback){
+                    c()
+                }
+                window.requestAnimationFrame(lookingRAM)
+            }
+            window.requestAnimationFrame(lookingRAM)
+
+            let virtual_terminal = document.getElementById("terminal-content")
+            vm.SBUF.setlistener.push(function(old_value,new_value){
+                virtual_terminal.innerHTML += String.fromCharCode(new_value)
+                let scon  = vm.SCON.get()
+                scon |= 0x02
+                vm.SCON.set(scon)
+            })
+        }
+
+        function readfile() {
+            let file = null
+            if(this.files.length > 0)
+                file = this.files[0];
+            else
+                return
+            //---------------!-----------------
+            reset()
+            
+            let SuffixStartPos = file.name.lastIndexOf('.')
+            let fileSuffix = file.name.substring(SuffixStartPos)
+
+            
+            if(fileSuffix == ".bin"){
+                let reader = new FileReader();
+                //将文件以二进制形式读入页面 
+                reader.readAsArrayBuffer(file);
+                reader.onloadend = function (f) {
+                    vm.IDATA.content = new Uint8Array(reader.result)
+                }
+            }else if(fileSuffix == ".hex"){
+                decode_hex(file,function(data){
+                    vm.IDATA.content = data
+                })
+            }
+        }
+
+
+
+    </script>
+    <style>
+        body {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        #reg-a {}
+
+        .reg {
+            border-radius: .5em;
+            border: 1px solid rgb(150, 150, 119);
+            box-shadow: .15em .15em .25em rgba(0.3, 0.3, 0.3, 0.3);
+            display: inline-flex;
+            flex-direction: column;
+            width: 6em;
+        }
+
+        .reg.reg16 {
+            width: 12em;
+        }
+
+        .reg .value {
+            padding: .3em .4em;
+
+            box-shadow: .15em .2em .2em rgba(0.3, 0.3, 0.3, 0.1) inset;
+
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .reg .title {
+            width: 100%;
+            display: inline-flex;
+            text-align: center;
+
+        }
+
+        .reg .title .name {
+            width: 50%;
+            padding: .3em .4em;
+        }
+
+        .reg .title .type {
+            padding: .3em .4em;
+            border-top-right-radius: .5em;
+            background: cornflowerblue;
+            color: cornsilk;
+
+            width: 50%;
+            transition-duration: .15s
+        }
+
+        .reg .title .type:hover {
+            cursor: pointer;
+            transform: scale(1.1)
+        }
+
+        .reg .title .type:active {
+            cursor: pointer;
+            transform: scale(1)
+        }
+
+        #ram {
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+            border: 1px solid grey;
+            border-radius: .5em;
+            box-shadow: .15em .15em .25em rgba(0.3, 0.3, 0.3, 0.3);
+            justify-content: space-around;
+            width: 35em;
+        }
+
+        #ram .row {
+            margin: 0.2em .2em
+        }
+
+        #ram .row .cell {
+            transition-duration: .2s;
+            padding: 0em .2em;
+        }
+
+        #ram .row .cell:hover {
+            box-shadow: .15em .2em .2em rgba(0.3, 0.3, 0.3, 0.1) inset;
+            border-radius: .5em;
+        }
+
+            #ram .row .cell.changed {
+        background: gray;
+        border-radius: .5em;
+        padding: 0 .2em;
+        color: white;
+        box-shadow: 0.1em 0.1em 0.2em #483d8b6b;
+        }
+
+        #ram .title {
+            border-radius: .5em;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+            background: cornflowerblue;
+            box-shadow: .15em .2em .2em rgba(0.3, 0.3, 0.3, 0.1);
+            color: cornsilk;
+            flex-basis: 100%;
+            padding: .3em .4em;
+            text-align: center;
+        }
+
+        #virtual-terminal{
+            border-radius: .5em;
+            
+            border: 1px solid grey;
+            box-shadow: .15em .2em .2em rgba(0.3, 0.3, 0.3, 0.1);
+            width: 100%;
+            white-space:pre
+        }
+
+        #terminal-content{
+            width: 100%;
+    overflow: scroll;
+    white-space: pre;
+        }
+    </style>
+</head>
+
+
+<body onload="initReg()">
+    <span id="reg-a" class="reg">
+        <span class="title">
+            <span class="name">A</span>
+            <span class="type">HEX</span>
+        </span>
+        <span class="value">00</span>
+    </span>
+    <span id="reg-b" class="reg">
+        <span class="title">
+            <span class="name">B</span>
+            <span class="type">HEX</span>
+        </span>
+        <span class="value">00</span>
+    </span>
+    <span id="reg-sp" class="reg">
+        <span class="title">
+            <span class="name">SP</span>
+            <span class="type">HEX</span>
+        </span>
+        <span class="value">00</span>
+    </span>
+    <span id="reg-psw" class="reg">
+        <span class="title">
+            <span class="name">PSW</span>
+            <span class="type">HEX</span>
+        </span>
+        <span class="value">00</span>
+    </span>
+    <span id="reg-dptr" class="reg reg16">
+        <span class="title">
+            <span class="name">DPTR</span>
+            <span class="type">HEX</span>
+        </span>
+        <span class="value">00 00</span>
+    </span>
+    <span id="reg-pc" class="reg reg16">
+        <span class="title">
+            <span class="name">PC</span>
+            <span class="type">HEX</span>
+        </span>
+        <span class="value">00 00</span>
+    </span>
+    <span style="flex-basis: 100%"></span>
+    <span id='ram'>
+        <span class="title">RAM</span>
+        <span class="row">
+            0x00:
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span class="row">
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span style="flex-basis: 100%"></span>
+        <span class="row">
+            0x10:
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span class="row">
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span style="flex-basis: 100%"></span>
+        <span class="row">
+            0x20:
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span class="row">
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span style="flex-basis: 100%"></span>
+        <span class="row">
+            0x30:
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span class="row">
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span style="flex-basis: 100%"></span>
+        <span class="row">
+            0x40:
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span class="row">
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span style="flex-basis: 100%"></span>
+        <span class="row">
+            0x50:
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span class="row">
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span style="flex-basis: 100%"></span>
+        <span class="row">
+            0x60:
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span class="row">
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span style="flex-basis: 100%"></span>
+        <span class="row">
+            0x70:
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span class="row">
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+            <span class="cell">00</span>
+        </span>
+        <span style="flex-basis: 100%"></span>
+    </span>
+    <input type="file" value="../keil_51vm/51vm.bin" accept=".bin,.hex" onchange="readfile.call(this)"/>
+    <button type="button" id="btn-start" onclick="start_or_pause()">开始</button>
+    <button type="button" id="btn-reset" onclick="reset()">重置</button>
+    <div id="virtual-terminal">
+        <div>
+            <button type="button" id="btn-clear-terminal" onclick="clear_terminal()">清空</button><span>虚拟终端:</span>
+        </div><div id='terminal-content'></div>
+    </div>
+ </body> </html>
