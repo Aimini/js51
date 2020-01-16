@@ -4,13 +4,22 @@ function reg(value = 0, bitlen = 8) {
     this.max = Math.pow(2, bitlen) - 1
 
     this.getlistener = []
+    this.changedlistener = []
     this.setlistener = []
 }
+
 reg.prototype.set = function (val) {
     for (let one of this.setlistener) {
         one(this._value, val);
     }
+    let oldval = this._value;
     this._value = val;
+    
+    if (oldval !== val){
+        for (let one of this.changedlistener) {
+            one(this._value, val);
+        }
+    }
     return this;
 }
 reg.prototype.get = function () {
@@ -46,7 +55,7 @@ function _51cpu() {
     this.A = new reg()
     this.B = new reg()
     this.PSW = new reg()
-    this.SP = new reg(7)
+    this.SP = new reg()
     this.PC = new reg(0, 16)
     this.DPTR = new reg(0, 16)
     this.DPL = new reg()
@@ -67,9 +76,15 @@ function _51cpu() {
         this.IRAM.push(0);
 
     let cpu_ref = this;
+
     this.DPL.get = function () {
-        this.__proto__.get.call(this)
-        return (cpu_ref.DPTR.get() & 0xFF)
+        this._value = cpu_ref.DPTR.get() & 0xFF
+        return this.__proto__.get.call(this)
+    }
+    
+    this.DPH.get = function () {
+        this._value = (cpu_ref.DPTR.get()  >> 8) & 0xFF
+        return this.__proto__.get.call(this)
     }
 
     this.DPL.set = function (val_new) {
@@ -80,11 +95,6 @@ function _51cpu() {
         cpu_ref.DPTR.set(val)
     }
 
-
-    this.DPH.get = function () {
-        this.__proto__.get.call(this)
-        return (cpu_ref.DPTR.get() & 0xFF00) >> 8
-    }
     this.DPH.set = function (val_new) {
         this.__proto__.set.call(this, val_new)
         let val = cpu_ref.DPTR.get()
@@ -92,22 +102,24 @@ function _51cpu() {
         val += (val_new << 8)
         cpu_ref.DPTR.set(val)
     }
+    //------- Parity Flag(PSW.0) specialization --------
+    //-------Can't change PF from outer method --------
+    let psw_ref =this.PSW
 
-    //-------Parity Flag: PSW.0 specialization--------
-    this.PSW.set = function (value_new) {
-        let a = cpu_ref.A.get()
-        let parity = cpu_ref.parity()
-        this.__proto__.set.call(this, ((value_new & 0xFE) + parity))
+    psw_ref.set = function (value_new) {
+        let v = (value_new & 0xFE) | (this._value & 0x01)
+        this.__proto__.set.call(this,v)
     }
 
-    this.A.set = function (value_new) {
-        this.__proto__.set.call(this, value_new)
-        let parity = cpu_ref.parity()
-        cpu_ref.PSW.set(cpu_ref.PSW.get())
-    }
+    this.A.changedlistener.push((oldval, newval) => {
+        let v = psw_ref._value;
+        psw_ref._value  = (v & 0xFE) | (cpu_ref.parity() & 0x01)
+        // have callback
+        psw_reg.set(psw_ref._value)
+    })
 
     //------PSW flag specification---------------
-    let psw_ref =this.PSW
+
     this.PSW.carry = {
         set:function(value){
             psw_ref.set(((psw_ref._value)&0x7F) + ((value&0x01) << 7))
