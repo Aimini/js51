@@ -1,9 +1,5 @@
 
     //--------interrupt service implement------
-_51cpu.prototype.start_interrupt = function(order){
-        //TODO : according order to excute a call operation to
-        // corresponding interrupt vector
-}
 
 
 _51cpu.prototype.next = function (count = 1) {

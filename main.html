@@ -7,15 +7,15 @@
     <script src="51vm_operation.js"></script>
     <script src="51vm_opcode_decoder.js"></script>
     <script src="51vm_ctl.js"></script>
-    <script src="peripheral_serial.js"></script>
-    
+    <script src="51vm_peripheral.js"></script>
+
     <script src="test.js"></script>
     
     <script src="hex_decoder.js"></script>
     <script>
 
 
-        value_type = ["HEX", "DEC", "BIN"]
+        let value_type = ["HEX", "DEC", "BIN"]
         let run_interval_id = -1
         function excute_tick(){
             vm.next(2000)
@@ -42,11 +42,18 @@
             document.getElementById("btn-start").innerText = "开始"
         }
 
+
         function clear_terminal(){
             let terimal = document.getElementById("terminal-content")
             terimal.innerText = ''
         }
 
+        function set_ext_interrupt(n){
+            if (n === 0)
+                vm.TCON |= 2
+            else if (n === 2)
+                vm.TCON |= 8
+        }
         function change_type() {
             if (this.value == null) {
                 this.value = 0
@@ -104,6 +111,9 @@
             dom_type.value = 0
             dom_value.value = reg.get()
 
+            dom_type.onclick = function(){
+                change_type.apply(this)
+            }
             return function(){
                 if(dom_value.value != reg.get())
                 set_dom_value(dom_value, reg.get(), dom_type.value, reg_bit_len)
@@ -112,7 +122,7 @@
 
 
         function initReg() {
-            vm.extend(get_serial())
+            install_default_peripherals(vm)
 
             let lookingCallback = []
             lookingCallback.push(combine_dom_reg("#reg-a", vm.A))
@@ -122,6 +132,11 @@
             lookingCallback.push(combine_dom_reg("#reg-dptr", vm.DPTR, 16))
             lookingCallback.push(combine_dom_reg("#reg-pc", vm.PC, 16))
 
+            lookingCallback.push(combine_dom_reg("#reg-p0", vm.P0))
+            lookingCallback.push(combine_dom_reg("#reg-p1", vm.P1))
+            lookingCallback.push(combine_dom_reg("#reg-p2", vm.P2))
+            lookingCallback.push(combine_dom_reg("#reg-p3", vm.P3))
+            
             let cells = document.querySelectorAll("#ram .row .cell");
             for(let one of cells){
                 one.value = 0
@@ -530,9 +545,40 @@
         </span>
         <span style="flex-basis: 100%"></span>
     </span>
+
+    <span id="reg-p0" class="reg">
+        <span class="title">
+            <span class="name">P0</span>
+            <span class="type">HEX</span>
+        </span>
+        <span class="value">00 00</span>
+    </span>
+    <span id="reg-p1" class="reg">
+        <span class="title">
+            <span class="name">P1</span>
+            <span class="type">HEX</span>
+        </span>
+        <span class="value">00 00</span>
+    </span>
+    <span id="reg-p2" class="reg">
+        <span class="title">
+            <span class="name">P2</span>
+            <span class="type">HEX</span>
+        </span>
+        <span class="value">00 00</span>
+    </span>
+    <span id="reg-p3" class="reg">
+        <span class="title">
+            <span class="name">P3</span>
+            <span class="type">HEX</span>
+        </span>
+        <span class="value">00 00</span>
+    </span>
     <input type="file" value="../keil_51vm/51vm.bin" accept=".bin,.hex" onchange="readfile.call(this)"/>
     <button type="button" id="btn-start" onclick="start_or_pause()">开始</button>
     <button type="button" id="btn-reset" onclick="reset()">重置</button>
+    <button type="button" id="btn-reset" onclick="set_ext_interrupt(0)">int0</button>
+    <button type="button" id="btn-reset" onclick="set_ext_interrupt(1)">int1</button>
     <div id="virtual-terminal">
         <div>
             <button type="button" id="btn-clear-terminal" onclick="clear_terminal()">清空</button><span>虚拟终端:</span>

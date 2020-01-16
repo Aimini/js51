@@ -431,4 +431,10 @@ _51cpu.prototype.execute_one = function () {
         //MOV Rn,A
         this.op_move(opcode.get_Rn(),this.A)
     }
+    for(i of this.irq){
+        let irqn = i();
+        if(irqn > 0){
+            this.op_call((irqn << 3) + 3)
+        }
+    }
 }

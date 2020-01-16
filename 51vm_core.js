@@ -115,7 +115,7 @@ function _51cpu() {
         let v = psw_ref._value;
         psw_ref._value  = (v & 0xFE) | (cpu_ref.parity() & 0x01)
         // have callback
-        psw_reg.set(psw_ref._value)
+        psw_ref.set(psw_ref._value)
     })
 
     //------PSW flag specification---------------
@@ -131,6 +131,7 @@ function _51cpu() {
 
     this.interrupt_end_linstener = []
     this.addr_breakpoint = []
+    this.irq = []
 }
 
 //------------------break point -----------------
@@ -145,25 +146,35 @@ _51cpu.prototype.remove_addr_break = function(addr){
 
 
 
-//return parity flag generate by A
 _51cpu.prototype.parity = function () {
     let a = this.A.get()
     return (a ^ (a >> 1) ^ (a >> 2) ^ (a >> 3) ^ (a >> 4) ^ (a >> 5) ^ (a >> 6) ^ (a >> 7)) & 0x01
 }
 
-_51cpu.prototype.extend = function (ext_package) {
-    for(let addr in ext_package.SFR){
+/**
+ * extend  sfr register
+ *
+ * @param {Map<Number,String>} ext_package
+ *  key is sfr address, value is sfr name
+ * @return {Map<String,reg>}
+ *   return a map cantain name -> reg.
+ */
+_51cpu.prototype.sfr_extend = function (ext_package) {
+    ret = new Map()
+
+    for(let [addr, name] of ext_package){
         if(this.SFR[addr]){
             console.warn("overwrite SFR at address " + addr.toString(16))
         }
-        this.SFR[addr] = ext_package.SFR[addr]
+        this.SFR[addr] = name
+        this[name] = new reg()
+        ret.set(name,this[name])
     }
-    for(let name in ext_package['regs']){
-        if(this[name])
-        console.warn("overwrite register with name " + name)
-        this[name] = ext_package['regs'][name]
-    }
+    return ret
 }
+/**
+ *  reset all core register.(doesn't include sfr and ram)
+ */
 
 _51cpu.prototype.reset = function () {
     this.A.set(0)
