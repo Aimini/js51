@@ -1,0 +1,163 @@
+function reg(value = 0, bitlen = 8) {
+    this._value = value;
+    this.bitlen = bitlen
+    this.max = Math.pow(2, bitlen) - 1
+
+    this.getlistener = []
+    this.setlistener = []
+}
+reg.prototype.set = function (val) {
+    for (let one of this.setlistener) {
+        one(this._value, val);
+    }
+    this._value = val;
+    return this;
+}
+reg.prototype.get = function () {
+    for (let one of this.getlistener) {
+        one(this._value);
+    }
+    return this._value
+}
+
+reg.prototype.inc = function () {
+    this.set((this._value + 1)& this.max)
+    return this
+}
+
+reg.prototype.dec = function () {
+    this.set((this._value + this.max) & this.max)
+    return this
+}
+
+function memory(content){
+    this.content = content
+}
+memory.prototype.get = function(idx){
+    return this.content[idx]
+}
+
+memory.prototype.set = function(idx,value){
+    this.content[idx]  = value
+}
+    
+
+function _51cpu() {
+    this.A = new reg()
+    this.B = new reg()
+    this.PSW = new reg()
+    this.SP = new reg(7)
+    this.PC = new reg(0, 16)
+    this.DPTR = new reg(0, 16)
+    this.DPL = new reg()
+    this.DPH = new reg()
+    this.ERAM = []
+    this.IRAM = []
+    this.IDATA = new memory()
+    this.SFR = {
+        0x81: "SP",
+        0x82: "DPL",
+        0x83: "DPH",
+        0xD0: "PSW",
+        0xE0: "A",
+        0xF0: "B",
+    }
+
+    for (let i = 0; i < 128; ++i)
+        this.IRAM.push(0);
+
+    let cpu_ref = this;
+    this.DPL.get = function () {
+        this.__proto__.get.call(this)
+        return (cpu_ref.DPTR.get() & 0xFF)
+    }
+
+    this.DPL.set = function (val_new) {
+        cpu_ref.DPL.__proto__.set.call(this, val_new)
+        let val = cpu_ref.DPTR.get()
+        val &= 0xFF00
+        val += val_new
+        cpu_ref.DPTR.set(val)
+    }
+
+
+    this.DPH.get = function () {
+        this.__proto__.get.call(this)
+        return (cpu_ref.DPTR.get() & 0xFF00) >> 8
+    }
+    this.DPH.set = function (val_new) {
+        this.__proto__.set.call(this, val_new)
+        let val = cpu_ref.DPTR.get()
+        val &= 0x00FF
+        val += (val_new << 8)
+        cpu_ref.DPTR.set(val)
+    }
+
+    //-------Parity Flag: PSW.0 specialization--------
+    this.PSW.set = function (value_new) {
+        let a = cpu_ref.A.get()
+        let parity = cpu_ref.parity()
+        this.__proto__.set.call(this, ((value_new & 0xFE) + parity))
+    }
+
+    this.A.set = function (value_new) {
+        this.__proto__.set.call(this, value_new)
+        let parity = cpu_ref.parity()
+        cpu_ref.PSW.set(cpu_ref.PSW.get())
+    }
+
+    //------PSW flag specification---------------
+    let psw_ref =this.PSW
+    this.PSW.carry = {
+        set:function(value){
+            psw_ref.set(((psw_ref._value)&0x7F) + ((value&0x01) << 7))
+        },
+        get:function(){
+            return (psw_ref.get() >> 7) & 0x01
+        }
+    }
+
+    this.interrupt_end_linstener = []
+    this.addr_breakpoint = []
+}
+
+//------------------break point -----------------
+_51cpu.prototype.set_addr_break = function(addr){
+    this.addr_breakpoint.push(addr)
+}
+
+_51cpu.prototype.remove_addr_break = function(addr){
+   this.addr_breakpoint = this.addr_breakpoint.filter(value => value != addr)
+}
+
+
+
+
+//return parity flag generate by A
+_51cpu.prototype.parity = function () {
+    let a = this.A.get()
+    return (a ^ (a >> 1) ^ (a >> 2) ^ (a >> 3) ^ (a >> 4) ^ (a >> 5) ^ (a >> 6) ^ (a >> 7)) & 0x01
+}
+
+_51cpu.prototype.extend = function (ext_package) {
+    for(let addr in ext_package.SFR){
+        if(this.SFR[addr]){
+            console.warn("overwrite SFR at address " + addr.toString(16))
+        }
+        this.SFR[addr] = ext_package.SFR[addr]
+    }
+    for(let name in ext_package['regs']){
+        if(this[name])
+        console.warn("overwrite register with name " + name)
+        this[name] = ext_package['regs'][name]
+    }
+}
+
+_51cpu.prototype.reset = function () {
+    this.A.set(0)
+    this.B.set(0)
+    this.PSW.set(0)
+    this.SP.set(7)
+    this.PC.set(0)
+    this.DPTR.set(0)
+}
