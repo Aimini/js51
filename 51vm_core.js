@@ -13,7 +13,7 @@ reg.prototype.set = function (val) {
         one(this._value, val);
     }
     let oldval = this._value;
-    this._value = val;
+    this._value = val & this.max;
     
     if (oldval !== val){
         for (let one of this.changedlistener) {

@@ -56,10 +56,12 @@ function install_default_peripherals(cpu){
     
     let default_irq = function(){
         let vIE = ret.get("IE").get();
-        if(! vIE & 0x80)
-            return -1;
-        let vTCON = ret.get("TCON").get();
-        let vSCON = ret.get("SCON").get();
+        if(!(vIE & 0x80))
+            return -1
+        let rTCON = ret.get("TCON")
+        let rSCON = ret.get("SCON")
+        let vTCON = rTCON.get();
+        let vSCON = rSCON.get();
 
         let IRQ =  ((vTCON & 0x02) >> 1) // IE0 external interrupt 0
         IRQ |=  ((vTCON & 0x20) >> 4) //    TF0 Timer 0 over flow
@@ -70,10 +72,10 @@ function install_default_peripherals(cpu){
             return -1;
 
         let MAXIRQN = 5;
-        let IRQMASK = 1 << MAXIRQN;
+        let IRQMASK = (1 << MAXIRQN) - 1;
 
         let vIRQEM = IRQMASK & IRQ & vIE;
-        let vIPM =   IRQMASK & ret["IP"].get(); 
+        let vIPM =   IRQMASK & ret.get("IP").get(); 
 
 
         let sel = (vIRQEM << MAXIRQN) | (vIRQEM &  vIPM) // priority have high priorty
@@ -83,6 +85,16 @@ function install_default_peripherals(cpu){
                 break;
         }
         IRQN %= MAXIRQN;
+        //hardware clear irq flag;
+        if(IRQN == 0){
+            rTCON.set(rTCON.get() & 0xFD)
+        }else if(IRQN == 1){
+            rTCON.set(rTCON.get() & 0xDF)
+        }else if(IRQN == 2){
+            rTCON.set(rTCON.get() & 0xF7)
+        }else if(IRQN == 3){
+            rTCON.set(rTCON.get() & 0x7F)
+        }
         return IRQN;
     }
     cpu.irq.push(default_irq)

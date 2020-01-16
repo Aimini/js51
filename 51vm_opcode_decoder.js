@@ -433,7 +433,7 @@ _51cpu.prototype.execute_one = function () {
     }
     for(i of this.irq){
         let irqn = i();
-        if(irqn > 0){
+        if(irqn >= 0){
             this.op_call((irqn << 3) + 3)
         }
     }

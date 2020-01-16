@@ -50,9 +50,9 @@
 
         function set_ext_interrupt(n){
             if (n === 0)
-                vm.TCON |= 2
-            else if (n === 2)
-                vm.TCON |= 8
+                vm.TCON.set(vm.TCON.get() | 2)
+            else if (n === 1)
+                vm.TCON.set(vm.TCON.get() | 8)
         }
         function change_type() {
             if (this.value == null) {
@@ -142,6 +142,9 @@
                 one.value = 0
             }
             let lookingRAM = function () {
+                if(vm.IRAM.length != cells.length){
+                    throw "IRAM wroing length!"
+                }
                 for (let i = 0; i < vm.IRAM.length; ++i) {
                     if(cells[i].value != vm.IRAM[i]){
                         set_dom_value(cells[i], vm.IRAM[i], 0, 8)
