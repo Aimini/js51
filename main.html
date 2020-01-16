@@ -10,31 +10,31 @@
     <script src="51vm_peripheral.js"></script>
 
     <script src="test.js"></script>
-    
+
     <script src="hex_decoder.js"></script>
     <script>
 
 
         let value_type = ["HEX", "DEC", "BIN"]
         let run_interval_id = -1
-        function excute_tick(){
+        function excute_tick() {
             vm.next(2000)
         }
 
-        function start_or_pause(){
+        function start_or_pause() {
             // 0 meaning paused of stopped
-            if(run_interval_id <= 0){
-                run_interval_id = setInterval(excute_tick,1)
+            if (run_interval_id <= 0) {
+                run_interval_id = setInterval(excute_tick, 1)
                 document.getElementById("btn-start").innerText = "暂停"
-            }else{
+            } else {
                 clearInterval(run_interval_id)
                 run_interval_id = -1
                 document.getElementById("btn-start").innerText = "继续"
             }
         }
 
-        function reset(){
-            if(run_interval_id > 0){
+        function reset() {
+            if (run_interval_id > 0) {
                 clearInterval(run_interval_id)
                 run_interval_id = -1
             }
@@ -43,12 +43,12 @@
         }
 
 
-        function clear_terminal(){
+        function clear_terminal() {
             let terimal = document.getElementById("terminal-content")
             terimal.innerText = ''
         }
 
-        function set_ext_interrupt(n){
+        function set_ext_interrupt(n) {
             if (n === 0)
                 vm.TCON.set(vm.TCON.get() | 2)
             else if (n === 1)
@@ -111,12 +111,12 @@
             dom_type.value = 0
             dom_value.value = reg.get()
 
-            dom_type.onclick = function(){
+            dom_type.onclick = function () {
                 change_type.apply(this)
             }
-            return function(){
-                if(dom_value.value != reg.get())
-                set_dom_value(dom_value, reg.get(), dom_type.value, reg_bit_len)
+            return function () {
+                if (dom_value.value != reg.get())
+                    set_dom_value(dom_value, reg.get(), dom_type.value, reg_bit_len)
             }
         }
 
@@ -136,22 +136,22 @@
             lookingCallback.push(combine_dom_reg("#reg-p1", vm.P1))
             lookingCallback.push(combine_dom_reg("#reg-p2", vm.P2))
             lookingCallback.push(combine_dom_reg("#reg-p3", vm.P3))
-            
+
             let cells = document.querySelectorAll("#ram .row .cell");
-            for(let one of cells){
+            for (let one of cells) {
                 one.value = 0
             }
             let lookingRAM = function () {
-                if(vm.IRAM.length != cells.length){
+                if (vm.IRAM.length != cells.length) {
                     throw "IRAM wroing length!"
                 }
                 for (let i = 0; i < vm.IRAM.length; ++i) {
-                    if(cells[i].value != vm.IRAM[i]){
+                    if (cells[i].value != vm.IRAM[i]) {
                         set_dom_value(cells[i], vm.IRAM[i], 0, 8)
                         cells[i].classList.add("changed")
                     }
                 }
-                for(let c of lookingCallback){
+                for (let c of lookingCallback) {
                     c()
                 }
                 window.requestAnimationFrame(lookingRAM)
@@ -159,9 +159,9 @@
             window.requestAnimationFrame(lookingRAM)
 
             let virtual_terminal = document.getElementById("terminal-content")
-            vm.SBUF.setlistener.push(function(old_value,new_value){
+            vm.SBUF.setlistener.push(function (old_value, new_value) {
                 virtual_terminal.innerHTML += String.fromCharCode(new_value)
-                let scon  = vm.SCON.get()
+                let scon = vm.SCON.get()
                 scon |= 0x02
                 vm.SCON.set(scon)
             })
@@ -169,28 +169,30 @@
 
         function readfile() {
             let file = null
-            if(this.files.length > 0)
+            if (this.files.length > 0)
                 file = this.files[0];
             else
                 return
             //---------------!-----------------
             reset()
-            
+
             let SuffixStartPos = file.name.lastIndexOf('.')
             let fileSuffix = file.name.substring(SuffixStartPos)
 
-            
-            if(fileSuffix == ".bin"){
+
+            if (fileSuffix == ".bin") {
                 let reader = new FileReader();
                 //将文件以二进制形式读入页面 
                 reader.readAsArrayBuffer(file);
                 reader.onloadend = function (f) {
                     vm.IDATA.content = new Uint8Array(reader.result)
                 }
-            }else if(fileSuffix == ".hex"){
-                decode_hex(file,function(data){
-                    vm.IDATA.content = data
-                })
+            } else if (fileSuffix == ".hex") {
+                let reader = new FileReader()
+                reader.readAsText(file)
+                reader.onloadend = function () {
+                    vm.IDATA.content = decode_ihex(reader.result);
+                }
             }
         }
 
@@ -287,12 +289,12 @@
             border-radius: .5em;
         }
 
-            #ram .row .cell.changed {
-        background: gray;
-        border-radius: .5em;
-        padding: 0 .2em;
-        color: white;
-        box-shadow: 0.1em 0.1em 0.2em #483d8b6b;
+        #ram .row .cell.changed {
+            background: gray;
+            border-radius: .5em;
+            padding: 0 .2em;
+            color: white;
+            box-shadow: 0.1em 0.1em 0.2em #483d8b6b;
         }
 
         #ram .title {
@@ -307,19 +309,19 @@
             text-align: center;
         }
 
-        #virtual-terminal{
+        #virtual-terminal {
             border-radius: .5em;
-            
+
             border: 1px solid grey;
             box-shadow: .15em .2em .2em rgba(0.3, 0.3, 0.3, 0.1);
             width: 100%;
-            white-space:pre
+            white-space: pre
         }
 
-        #terminal-content{
+        #terminal-content {
             width: 100%;
-    overflow: scroll;
-    white-space: pre;
+            overflow: scroll;
+            white-space: pre;
         }
     </style>
 </head>
@@ -577,7 +579,7 @@
         </span>
         <span class="value">00 00</span>
     </span>
-    <input type="file" value="../keil_51vm/51vm.bin" accept=".bin,.hex" onchange="readfile.call(this)"/>
+    <input type="file" value="../keil_51vm/51vm.bin" accept=".bin,.hex" onchange="readfile.call(this)" />
     <button type="button" id="btn-start" onclick="start_or_pause()">开始</button>
     <button type="button" id="btn-reset" onclick="reset()">重置</button>
     <button type="button" id="btn-reset" onclick="set_ext_interrupt(0)">int0</button>
@@ -585,6 +587,9 @@
     <div id="virtual-terminal">
         <div>
             <button type="button" id="btn-clear-terminal" onclick="clear_terminal()">清空</button><span>虚拟终端:</span>
-        </div><div id='terminal-content'></div>
+        </div>
+        <div id='terminal-content'></div>
     </div>
- </body> </html>
+</body>
+
+</html>
