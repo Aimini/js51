@@ -188,3 +188,13 @@ _51cpu.prototype.reset = function () {
     this.DPTR.set(0)
     this.STATE = 0
 }
+
+_51cpu.prototype.text_snapshot = function(){
+    let t = `${this.PC.get()} ${this.A.get()} ${this.B.get()}`
+    t +=  ` ${this.SP.get()} ${this.PSW.get()} ${this.DPTR.get()}`
+    for(let x of this.IRAM){
+        t += x
+        t += ' '
+    }
+    return t
+}

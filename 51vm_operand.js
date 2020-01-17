@@ -127,12 +127,12 @@ _51cpu.prototype.fetch_bit = function () {
     let mem_cell = {
         set: b => {
             let value = mem_reg.get()
-            let set_value = (b << bit_index) | (value & (~(1 << bit_index)))
+            let set_value = ((b & 1) << bit_index) | (value & (~(1 << bit_index)))
             mem_reg.set(set_value)
         },
         get: () => {
             let value = mem_reg.get()
-            return (value >> bit_index) & 0x01
+            return (value >> bit_index) & 1
         }
     }
     this.PC.set(pt + 1)

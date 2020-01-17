@@ -168,7 +168,7 @@ _51cpu.prototype.op_add = function (mem_dest, mem_src, using_carry = false) {
 }
 
 _51cpu.prototype.op_addc = function (mem_dest, mem_src) {
-    this.op_add(mem_dest, mem_src)
+    this.op_add(mem_dest, mem_src, true)
 }
 
 
@@ -257,7 +257,7 @@ _51cpu.prototype.op_xrl = function (dest, src) {
 
 
 _51cpu.prototype.op_cpl = function (obj) {
-    obj.set((~obj.get() & 0x01))
+    obj.set(~obj.get())
 }
 
 _51cpu.prototype.op_clr = function (obj) {

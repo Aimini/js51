@@ -245,7 +245,11 @@ _51cpu.prototype.build_operands = function(opcode, operands){
 
 let snapshot_iram = []
 let snapshot_items = []
+
+let DebugText = ""
 _51cpu.prototype.execute_one = function () {
+    // DebugText = DebugText + this.text_snapshot() + '\n'
+
     this.STATE += 1
     let opcode = this.fetch_opcode();
     
