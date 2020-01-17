@@ -1,6 +1,51 @@
 
 _51cpu.prototype.execute_one = function () {
     let opcode = this.fetch_opcode();
+    if (opcode.value < 0x80) {
+        //0x00 - 0x7F
+        if (opcode.value < 0x40) {
+            this.__execute_decode_00_3F(opcode)
+        } else {
+            this.__execute_decode_40_7F(opcode)
+        }
+    } else {
+        //0x80 - 0xFF
+        if (opcode.value < 0xB0) {
+            this.__execute_decode_80_AF(opcode)
+        } else {
+            this.__execute_decode_B0_FF(opcode)
+        }
+    }
+
+    for (i of this.irq) {
+        let irqn = i();
+        if (irqn >= 0) {
+            this.op_call((irqn << 3) + 3)
+        }
+    }
+}
+
+
+_51cpu.prototype.__execute_decode_00_3F = function (opcode) {
+    if (opcode.value < 0x20) {
+        // 0x00 - 0x1F
+        if (opcode.value < 0x10) {
+            this.__execute_decode_00_0F()
+        } else {
+            this.__execute_decode_10_1F()
+        }
+    }
+    else {
+        // 0x20 - 0x3F
+        if (opcode.value < 0x30) {
+            this.__execute_decode_20_2F()
+        } else {
+            this.__execute_decode_30_3F()
+        }
+    }
+}
+
+_51cpu.prototype.__execute_decode_00_0F() = function (opcode) {
     if (opcode.test(0x00)) {
         //NOP
     } else if (opcode.test(0x01, 0x1F)) {
@@ -29,7 +74,11 @@ _51cpu.prototype.execute_one = function () {
     } else if (opcode.test(0x08, 0xF8)) {
         //INC Rn
         this.op_inc(opcode.get_Rn())
-    } else if (opcode.test(0x10)) {
+    }
+}
+
+_51cpu.prototype.__execute_decode_10_1F() = function (opcode) {
+    if (opcode.test(0x10)) {
         //JBC bit,offset
         let bit_cell = this.fetch_bit()
         let offset_raw = this.fetch_const()
@@ -69,7 +118,11 @@ _51cpu.prototype.execute_one = function () {
     } else if (opcode.test(0x18, 0xF8)) {
         //DEC Rn
         this.op_dec(opcode.get_Rn())
-    } else if (opcode.test(0x20)) {
+    }
+}
+
+_51cpu.prototype.__execute_decode_20_2F() = function (opcode) {
+    if (opcode.test(0x20)) {
         //JB bit, offset
         let b = this.fetch_bit()
         let offset_raw = this.fetch_const()
@@ -84,28 +137,32 @@ _51cpu.prototype.execute_one = function () {
         let high = value & 0x80
         value = ((value << 1) + (high >> 7)) & 0xFF
         this.A.set(value)
-    }else if (opcode.test(0x24)) {
+    } else if (opcode.test(0x24)) {
         //ADD A, #immed
-        this.op_add(this.A,this.fetch_const())
+        this.op_add(this.A, this.fetch_const())
     } else if (opcode.test(0x25)) {
         //ADD A, direct
-        this.op_add(this.A,this.fetch_direct())
-    } else if (opcode.test(0x26,0xFE)) {
+        this.op_add(this.A, this.fetch_direct())
+    } else if (opcode.test(0x26, 0xFE)) {
         //ADD A, @Ri
-        this.op_add(this.A,opcode.get_Ri())
-    }else if (opcode.test(0x28,0xF8)) {
+        this.op_add(this.A, opcode.get_Ri())
+    } else if (opcode.test(0x28, 0xF8)) {
         //ADD A, Rn
-        this.op_add(this.A,opcode.get_Rn())
-    }else if (opcode.test(0x30)) {
+        this.op_add(this.A, opcode.get_Rn())
+    }
+}
+
+_51cpu.prototype.__execute_decode_30_3F() = function (opcode) {
+    if (opcode.test(0x30)) {
         //JNB bit,offset
-        let bit =this.fetch_bit()
+        let bit = this.fetch_bit()
         let offset_raw = this.fetch_const()
-        if(!bit.get())
+        if (!bit.get())
             this.op_add_offset(offset_raw)
-    }else if (opcode.test(0x32)) {
+    } else if (opcode.test(0x32)) {
         //RETI
         this.op_ret()
-        for(let l of this.interrupt_end_linstener){
+        for (let l of this.interrupt_end_linstener) {
             l()
         }
     } else if (opcode.test(0x33)) {
@@ -123,108 +180,149 @@ _51cpu.prototype.execute_one = function () {
         this.PSW.set(psw)
     } else if (opcode.test(0x34)) {
         //ADDC A,#immed
-        this.op_add(this.A,this.fetch_const(),true)
+        this.op_add(this.A, this.fetch_const(), true)
     } else if (opcode.test(0x35)) {
         //ADDC A,direct
-        this.op_add(this.A,this.fetch_direct(),true)
-    } else if (opcode.test(0x36,0xFE)) {
+        this.op_add(this.A, this.fetch_direct(), true)
+    } else if (opcode.test(0x36, 0xFE)) {
         //ADDC A,@Ri
-        this.op_add(this.A,opcode.get_Ri(),true)
-    } else if (opcode.test(0x38,0xF8)) {
+        this.op_add(this.A, opcode.get_Ri(), true)
+    } else if (opcode.test(0x38, 0xF8)) {
         //ADDC A,Rn
-        this.op_add(this.A,opcode.get_Rn(),true)
-    } else if (opcode.test(0x40)) {
+        this.op_add(this.A, opcode.get_Rn(), true)
+    }
+}
+
+
+_51cpu.prototype.__execute_decode_40_7F = function (opcode) {
+    if (opcode.value < 0x60) {
+        // 0x40 - 0x5F
+        if (opcode.value < 0x50) {
+            this.__execute_decode_40_4F(opcode)
+        } else {
+            this.__execute_decode_50_5F(opcode)
+        }
+
+    } else {
+        // 0x60 - 0x7F
+
+        if (opcode.value < 0x70) {
+            this.__execute_decode_60_6F(opcode)
+        } else {
+            this.__execute_decode_70_7F(opcode)
+        }
+    }
+
+}
+
+
+_51cpu.prototype.__execute_decode_40_4F = function (opcode) {
+    if (opcode.test(0x40)) {
         //JC offset
         let offset_raw = this.fetch_const()
-        if(this.PSW.get() & 0x80)
+        if (this.PSW.get() & 0x80)
             this.op_add_offset(offset_raw)
     } else if (opcode.test(0x42)) {
         //ORL direct,A
         let direct = this.fetch_direct()
-        this.orl(direct,this.A)
+        this.orl(direct, this.A)
     } else if (opcode.test(0x43)) {
         //ORL direct,#immed
         let direct = this.fetch_direct()
         let immed = this.fetch_const()
-        this.orl(direct,immed)
+        this.orl(direct, immed)
     } else if (opcode.test(0x44)) {
         //ORL A,#immed
         let immed = this.fetch_const()
-        this.orl(this.A,immed)
+        this.orl(this.A, immed)
     } else if (opcode.test(0x45)) {
         //ORL A,direct
-        this.orl(this.A,this.fetch_direct())
-    } else if (opcode.test(0x46,0xFE)) {
+        this.orl(this.A, this.fetch_direct())
+    } else if (opcode.test(0x46, 0xFE)) {
         //ORL A,@Ri
-        this.orl(this.A,opcode.get_Ri())
-    } else if (opcode.test(0x48,0xF8)) {
+        this.orl(this.A, opcode.get_Ri())
+    } else if (opcode.test(0x48, 0xF8)) {
         //ORL A,Rn
-        this.orl(this.A,opcode.get_Rn())
-    } else if (opcode.test(0x50)) {
+        this.orl(this.A, opcode.get_Rn())
+    }
+}
+
+
+_51cpu.prototype.__execute_decode_50_5F = function (opcode) {
+    if (opcode.test(0x50)) {
         //JNC offset
         let offset_raw = this.fetch_const()
-        if((~this.PSW.get()) & 0x80)
+        if ((~this.PSW.get()) & 0x80)
             this.op_add_offset(offset_raw)
     } else if (opcode.test(0x52)) {
         //ANL direct,A
         let direct = this.fetch_direct()
-        this.op_anl(direct,this.A)
+        this.op_anl(direct, this.A)
     } else if (opcode.test(0x53)) {
         //ANL direct,#immed
         let direct = this.fetch_direct()
         let immed = this.fetch_const()
-        this.op_anl(direct,immed)
-    }  else if (opcode.test(0x54)) {
+        this.op_anl(direct, immed)
+    } else if (opcode.test(0x54)) {
         //ANL A,#immed
-        this.op_anl(this.A,this.fetch_const())
-    }  else if (opcode.test(0x55)) {
+        this.op_anl(this.A, this.fetch_const())
+    } else if (opcode.test(0x55)) {
         //ANL A,direct
-        this.op_anl(this.A,this.fetch_direct())
-    }  else if (opcode.test(0x56,0xFE)) {
+        this.op_anl(this.A, this.fetch_direct())
+    } else if (opcode.test(0x56, 0xFE)) {
         //ANL A,@Ri
-        this.op_anl(this.A,opcode.get_Ri())
-    }  else if (opcode.test(0x58,0xF8)) {
+        this.op_anl(this.A, opcode.get_Ri())
+    } else if (opcode.test(0x58, 0xF8)) {
         //ANL A,Rn
-        this.op_anl(this.A,opcode.get_Rn())
-    }  else if (opcode.test(0x60)) {
+        this.op_anl(this.A, opcode.get_Rn())
+    }
+}
+
+_51cpu.prototype.__execute_decode_60_6F = function (opcode) {
+    if (opcode.test(0x60)) {
         //JZ offset
         let offset_raw = this.fetch_const()
-        if(this.A.get() == 0)
+        if (this.A.get() == 0)
             this.op_add_offset(offset_raw)
-    }  else if (opcode.test(0x62)) {
+    } else if (opcode.test(0x62)) {
         //XRL direct,A
         let direct = this.fetch_direct()
-        this.op_xrl(direct,this.A)
-    }  else if (opcode.test(0x63)) {
+        this.op_xrl(direct, this.A)
+    } else if (opcode.test(0x63)) {
         //XRL direct,#immed
         let direct = this.fetch_direct()
         let immed = this.fetch_const()
-        this.op_xrl(direct,immed)
-    }  else if (opcode.test(0x64)) {
+        this.op_xrl(direct, immed)
+    } else if (opcode.test(0x64)) {
         //XRL A,#immed
         let immed = this.fetch_const()
-        this.op_xrl(this.A,immed)
-    }  else if (opcode.test(0x65)) {
+        this.op_xrl(this.A, immed)
+    } else if (opcode.test(0x65)) {
         //XRL A,direct
-        this.op_xrl(this.A,this.fetch_direct())
-    }  else if (opcode.test(0x66,0xFE)) {
+        this.op_xrl(this.A, this.fetch_direct())
+    } else if (opcode.test(0x66, 0xFE)) {
         //XRL A,@Ri
-        this.op_xrl(this.A,opcode.get_Ri())
-    }  else if (opcode.test(0x68,0xF8)) {
+        this.op_xrl(this.A, opcode.get_Ri())
+    } else if (opcode.test(0x68, 0xF8)) {
         //XRL A,Rn
-        this.op_xrl(this.A,opcode.get_Rn())
-    }  else if (opcode.test(0x70)) {
+        this.op_xrl(this.A, opcode.get_Rn())
+    }
+}
+
+
+_51cpu.prototype.__execute_decode_70_7F = function (opcode) {
+    if (opcode.test(0x70)) {
         //JNZ offset
         let offset_raw = this.fetch_const()
-        if(this.A.get() != 0)
+        if (this.A.get() != 0)
             this.op_add_offset(offset_raw)
-    }  else if (opcode.test(0x72)) {
+    } else if (opcode.test(0x72)) {
         //ORL C,bit
         this.op_orl_bit(this.fetch_bit())
-    }  else if (opcode.test(0x73)) {
+    } else if (opcode.test(0x73)) {
         //JMP @A+DPTR
         this.PC.set(this.A.get() + this.DPTR.get())
-    }  else if (opcode.test(0x74)) {
+    } else if (opcode.test(0x74)) {
         //MOV A,#immed
         this.A.set(this.fetch_const())
     } else if (opcode.test(0x75)) {
@@ -240,7 +338,30 @@ _51cpu.prototype.execute_one = function () {
         //  MOV   Rn,#immed
         let Rn = opcode.get_Rn()
         this.op_move(Rn, this.fetch_const())
-    } else if (opcode.test(0x80)) {
+    }
+}
+
+
+_51cpu.prototype.__execute_decode_80_BF = function (opcode) {
+
+    if (opcode.value < 0xA0) {
+        if (opcode < 0x90) {
+            this.__execute_decode_80_8F(opcode)
+        } else {
+            this.__execute_decode_90_9F(opcode)
+        }
+    } else {
+        if (opcode < 0xB0) {
+            this.__execute_decode_A0_AF(opcode)
+        } else {
+            this.__execute_decode_B0_BF(opcode)
+        }
+    }
+}
+
+
+_51cpu.prototype.__execute_decode_80_8F = function(opcode){
+    if (opcode.test(0x80)) {
         //SJMP offset
         this.op_add_offset(this.fetch_const())
     } else if (opcode.test(0x82)) {
@@ -248,7 +369,7 @@ _51cpu.prototype.execute_one = function () {
         this.op_anl_bit(this.fetch_bit())
     } else if (opcode.test(0x83)) {
         //MOVC A, @A+PC
-        this.op_move(this.A,this.IDATA.get(this.A.get() + this.PC.get()))
+        this.op_move(this.A, this.IDATA.get(this.A.get() + this.PC.get()))
     } else if (opcode.test(0x84)) {
         //DIV AB
         this.op_div()
@@ -257,39 +378,49 @@ _51cpu.prototype.execute_one = function () {
         let src = this.fetch_direct()
         let dest = this.fetch_direct()
         this.op_move(dest, src)
-    } else if (opcode.test(0x86,0xFE)) {
+    } else if (opcode.test(0x86, 0xFE)) {
         // MOV direct,@Ri
         this.op_move(this.fetch_direct(), opcode.get_Ri())
-    } else if (opcode.test(0x88,0xF8)) {
+    } else if (opcode.test(0x88, 0xF8)) {
         // MOV direct,Rn
         this.op_move(this.fetch_direct(), opcode.get_Rn())
-    } else if (opcode.test(0x90)) {
+    }
+}
+
+
+_51cpu.prototype.__execute_decode_90_9F = function(opcode){
+    if (opcode.test(0x90)) {
         //MOV DPTR,#immed
         this.DPTR.set(this.fetch_const16())
     } else if (opcode.test(0x92)) {
         //MOV bit,C
-        this.op_move(this.fetch_bit(),this.PSW.carry)
+        this.op_move(this.fetch_bit(), this.PSW.carry)
     } else if (opcode.test(0x93)) {
         //MOV A,@A+DPTR
-        this.op_move(this.A,this.IDATA.get(this.A.get() + this.DPTR.get()))
+        this.op_move(this.A, this.IDATA.get(this.A.get() + this.DPTR.get()))
     } else if (opcode.test(0x94)) {
         //SUBB A,#immed
-        this.op_subb(this.A,this.fetch_const())
+        this.op_subb(this.A, this.fetch_const())
     } else if (opcode.test(0x95)) {
         //SUBB A,direct
-        this.op_subb(this.A,this.fetch_direct())
-    } else if (opcode.test(0x96,0xFE)) {
+        this.op_subb(this.A, this.fetch_direct())
+    } else if (opcode.test(0x96, 0xFE)) {
         //SUBB A,@Ri
-        this.op_subb(this.A,opcode.get_Ri() )
-    } else if (opcode.test(0x98,0xF8)) {
+        this.op_subb(this.A, opcode.get_Ri())
+    } else if (opcode.test(0x98, 0xF8)) {
         //SUBB A,Rn
-        this.op_subb(this.A,opcode.get_Rn() )
-    } else if (opcode.test(0xA0)) {
+        this.op_subb(this.A, opcode.get_Rn())
+    }
+}
+
+
+_51cpu.prototype.__execute_decode_A0_AF = function(opcode){
+    if (opcode.test(0xA0)) {
         // ORL C,/bit
-        this.op_orl_bit(this.fetch_bit(),true)
+        this.op_orl_bit(this.fetch_bit(), true)
     } else if (opcode.test(0xA2)) {
         // MOV C,bit
-        this.op_move(this.PSW.carry,this.fetch_bit())
+        this.op_move(this.PSW.carry, this.fetch_bit())
     } else if (opcode.test(0xA3)) {
         // INC DPTR
         this.op_inc(this.DPTR)
@@ -299,15 +430,20 @@ _51cpu.prototype.execute_one = function () {
     } else if (opcode.test(0xA5)) {
         // USER DEFINED 
         return 0
-    } else if (opcode.test(0xA6,0xFE)) {
+    } else if (opcode.test(0xA6, 0xFE)) {
         // MOV @Ri,direct 
-        this.op_move(opcode.get_Ri(),this.fetch_direct())
-    } else if (opcode.test(0xA8,0xF8)) {
+        this.op_move(opcode.get_Ri(), this.fetch_direct())
+    } else if (opcode.test(0xA8, 0xF8)) {
         // MOV Rn,direct 
-        this.op_move(opcode.get_Rn(),this.fetch_direct())
-    } else if (opcode.test(0xB0)) {
+        this.op_move(opcode.get_Rn(), this.fetch_direct())
+    } 
+}
+
+
+_51cpu.prototype.__execute_decode_B0_BF = function(opcode){
+    if (opcode.test(0xB0)) {
         //ANL C,/bit
-        this.op_anl_bit(this.fetch_bit(),true)
+        this.op_anl_bit(this.fetch_bit(), true)
     } else if (opcode.test(0xB2)) {
         //CPL bit
         this.op_cpl(this.fetch_bit())
@@ -318,23 +454,45 @@ _51cpu.prototype.execute_one = function () {
         //CJNE A,#immed,offset
         let immed = this.fetch_const()
         let offset_raw = this.fetch_const()
-        this.op_cjne(this.A,immed,offset_raw)
+        this.op_cjne(this.A, immed, offset_raw)
     } else if (opcode.test(0xB5)) {
         //CJNE A,direct,offset
         let direct = this.fetch_direct()
         let offset_raw = this.fetch_const()
-        this.op_cjne(this.A,direct,offset_raw)
-    } else if (opcode.test(0xB6,0xFE)) {
+        this.op_cjne(this.A, direct, offset_raw)
+    } else if (opcode.test(0xB6, 0xFE)) {
         //CJNE @Ri,#immed,offset
         let immed = this.fetch_const()
         let offset_raw = this.fetch_const()
-        this.op_cjne(opcode.get_Ri(),immed,offset_raw)
-    } else if (opcode.test(0xB8,0xF8)) {
+        this.op_cjne(opcode.get_Ri(), immed, offset_raw)
+    } else if (opcode.test(0xB8, 0xF8)) {
         //CJNE Rn,#immed,offset
         let immed = this.fetch_const()
         let offset_raw = this.fetch_const()
-        this.op_cjne(opcode.get_Rn(),immed,offset_raw)
-    } else if (opcode.test(0xC0)) {
+        this.op_cjne(opcode.get_Rn(), immed, offset_raw)
+    }
+}
+
+
+_51cpu.prototype.__execute_decode_C0_FF = function (opcode) {
+    if (opcode.value < 0xE0) {
+        if (opcode < 0xD0) {
+            this.__execute_decode_C0_CF(opcode)
+        } else {
+            this.__execute_decode_D0_DF(opcode)
+        }
+    } else {
+        if (opcode < 0xF0) {
+            this.__execute_decode_E0_EF(opcode)
+        } else {
+            this.__execute_decode_F0_FF(opcode)
+        }
+    }
+
+}
+
+_51cpu.prototype.__execute_decode_C0_CF = function (opcode) {
+    if (opcode.test(0xC0)) {
         //PUSH direct
         this.op_push(this.fetch_direct())
     } else if (opcode.test(0xC2)) {
@@ -346,17 +504,23 @@ _51cpu.prototype.execute_one = function () {
     } else if (opcode.test(0xC4)) {
         //SWAP A
         let a = this.A.get()
-        this.A.set(((a & 0xF0) >> 4) | ((a&0x0F)<<4))
+        this.A.set(((a & 0xF0) >> 4) | ((a & 0x0F) << 4))
     } else if (opcode.test(0xC5)) {
         //XCH A,direct
-        this.op_xch(this.A,this.fetch_direct())
-    } else if (opcode.test(0xC6,0xFE)) {
+        this.op_xch(this.A, this.fetch_direct())
+    } else if (opcode.test(0xC6, 0xFE)) {
         //XCH A,@Ri
-        this.op_xch(this.A,opcode.get_Ri())
-    } else if (opcode.test(0xC8,0xF8)) {
+        this.op_xch(this.A, opcode.get_Ri())
+    } else if (opcode.test(0xC8, 0xF8)) {
         //XCH A,Rn
-        this.op_xch(this.A,opcode.get_Rn())
-    } else if (opcode.test(0xD0)) {
+        this.op_xch(this.A, opcode.get_Rn())
+    }
+}
+
+
+
+_51cpu.prototype.__execute_decode_D0_DF = function (opcode) {
+    if (opcode.test(0xD0)) {
         //POP direct
         this.op_pop(this.fetch_direct())
     } else if (opcode.test(0xD2)) {
@@ -380,61 +544,66 @@ _51cpu.prototype.execute_one = function () {
         let value = this.op_dec(direct)
         if (value != 0)
             this.op_add_offset(offset)
-    } else if (opcode.test(0xD6,0xFE)) {
+    } else if (opcode.test(0xD6, 0xFE)) {
         // XCHD A,@Ri
-        this.op_xchd(this.A,opcode.get_Ri())
-    } else if (opcode.test(0xD8,0xF8)) {
+        this.op_xchd(this.A, opcode.get_Ri())
+    } else if (opcode.test(0xD8, 0xF8)) {
         // DJNZ Rn,offset
         let Rn = opcode.get_Rn()
         let offset_raw = this.fetch_const()
         this.op_dec(Rn)
-        if(Rn.get() != 0)
+        if (Rn.get() != 0)
             this.op_add_offset(offset_raw)
-    } else if (opcode.test(0xE0)) {
-         //MOVX A,@DPTR
-         this.A.set(this.ERAM[this.DPTR.get()])
-    } else if (opcode.test(0xE2,0xFE)) {
-       //MOVX A,@Ri
-       let Ri = opcode.get_Ri()
-       Ri.ram = this.ERAM
-       this.op_move(this.A,Ri)
+    }
+}
+
+
+_51cpu.prototype.__execute_decode_E0_EF = function (opcode) {
+
+    if (opcode.test(0xE0)) {
+        //MOVX A,@DPTR
+        this.A.set(this.ERAM[this.DPTR.get()])
+    } else if (opcode.test(0xE2, 0xFE)) {
+        //MOVX A,@Ri
+        let Ri = opcode.get_Ri()
+        Ri.ram = this.ERAM
+        this.op_move(this.A, Ri)
     } else if (opcode.test(0xE4)) {
         //CLR A
         this.A.set(0)
-    }  else if (opcode.test(0xE5)) {
+    } else if (opcode.test(0xE5)) {
         //MOV A,direct
-        this.op_move(this.A,this.fetch_direct())
-    } else if (opcode.test(0xE6,0xFE)) {
+        this.op_move(this.A, this.fetch_direct())
+    } else if (opcode.test(0xE6, 0xFE)) {
         //MOV A,@Ri
-        this.op_move(this.A,opcode.get_Ri())
-    } else if (opcode.test(0xE8,0xF8)) {
+        this.op_move(this.A, opcode.get_Ri())
+    } else if (opcode.test(0xE8, 0xF8)) {
         //MOV A,Rn
-        this.op_move(this.A,opcode.get_Rn())
-    }  else if (opcode.test(0xF0)) {
+        this.op_move(this.A, opcode.get_Rn())
+    }
+}
+
+
+_51cpu.prototype.__execute_decode_F0_FF = function (opcode) {
+    if (opcode.test(0xF0)) {
         //MOVX @DPTR,A
         this.ERAM[this.DPTR.get()] = this.A.get()
-    } else if (opcode.test(0xF2,0xFE)) {
+    } else if (opcode.test(0xF2, 0xFE)) {
         //MOVX @Ri,A
         let Ri = opcode.get_Ri()
         Ri.ram = this.ERAM
-        this.op_move(Ri,this.A)
+        this.op_move(Ri, this.A)
     } else if (opcode.test(0xF4)) {
         //CPL A
-        this.A.set((~this.A.get())&0xFF)
+        this.A.set((~this.A.get()) & 0xFF)
     } else if (opcode.test(0xF5)) {
         //MOV direct,A
-        this.op_move(this.fetch_direct(),this.A)
-    } else if (opcode.test(0xF6,0xFE)) {
+        this.op_move(this.fetch_direct(), this.A)
+    } else if (opcode.test(0xF6, 0xFE)) {
         //MOV @Ri,A
-        this.op_move(opcode.get_Ri(),this.A)
-    } else if (opcode.test(0xF8,0xF8)) {
+        this.op_move(opcode.get_Ri(), this.A)
+    } else if (opcode.test(0xF8, 0xF8)) {
         //MOV Rn,A
-        this.op_move(opcode.get_Rn(),this.A)
-    }
-    for(i of this.irq){
-        let irqn = i();
-        if(irqn >= 0){
-            this.op_call((irqn << 3) + 3)
-        }
+        this.op_move(opcode.get_Rn(), this.A)
     }
 }
