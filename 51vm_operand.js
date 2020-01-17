@@ -7,7 +7,7 @@ _51cpu.prototype.get_iram_cell = function (addr) {
     let cpu_ref = this
     return {
         set: function (val) {
-            cpu_ref.IRAM[addr] = val
+            cpu_ref.IRAM[addr] = val & 0xFF
         },
         get: function () {
             return cpu_ref.IRAM[addr]
@@ -58,7 +58,9 @@ _51cpu.prototype.fetch_opcode = function () {
             get: function () {
                 return this.ram[Ri]
             },
-            ram:cpu_ref.IRAM
+            ram:cpu_ref.IRAM,
+            addr: Ri_addr,
+            mem_addr: Ri,
         }
     }
 
@@ -69,32 +71,35 @@ _51cpu.prototype.fetch_opcode = function () {
             },
             get: function () {
                 return cpu_ref.IRAM[Rn_addr]
-            }
+            },
+            addr: Rn_addr,
         }
-    }
-
-    opcode.fetch_addr11 = function () {
-        let comb = ((this.value & 0xE0) << 3) + cpu_ref.IDATA[cpu_ref.PC.get()]
-        let next_PC = cpu_ref.PC.inc().get()
-        comb += (next_PC & 0xF800)
-        return comb
     }
 
     return opcode
 }
+
+
+
 
 _51cpu.prototype.fetch_const16 = function () {
     let pt = this.PC.get()
     let high8bit = this.IDATA.get(pt)
     let low8bit = this.IDATA.get(pt + 1)
     this.PC.set(pt + 2)
-    return (high8bit << 8) + low8bit
+    let value = (high8bit << 8) + low8bit
+    
+    return {
+        get: () => value
+    }
 }
 
 _51cpu.prototype.fetch_const = function () {
     let value = this.IDATA.get(this.PC.get())
     this.PC.inc()
-    return value
+    return {
+        get: () => value
+    }
 }
 
 _51cpu.prototype.fetch_direct = function () {

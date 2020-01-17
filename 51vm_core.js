@@ -22,6 +22,7 @@ reg.prototype.set = function (val) {
     }
     return this;
 }
+
 reg.prototype.get = function () {
     for (let one of this.getlistener) {
         one(this._value);
@@ -63,6 +64,8 @@ function _51cpu() {
     this.ERAM = []
     this.IRAM = []
     this.IDATA = new memory()
+    //count instruction
+    this.STATE = 0
     this.SFR = {
         0x81: "SP",
         0x82: "DPL",
@@ -119,7 +122,6 @@ function _51cpu() {
     })
 
     //------PSW flag specification---------------
-
     this.PSW.carry = {
         set:function(value){
             psw_ref.set(((psw_ref._value)&0x7F) + ((value&0x01) << 7))
@@ -129,6 +131,7 @@ function _51cpu() {
         }
     }
 
+    this.build_instruction_table()
     this.interrupt_end_linstener = []
     this.addr_breakpoint = []
     this.irq = []
@@ -183,4 +186,5 @@ _51cpu.prototype.reset = function () {
     this.SP.set(7)
     this.PC.set(0)
     this.DPTR.set(0)
+    this.STATE = 0
 }
