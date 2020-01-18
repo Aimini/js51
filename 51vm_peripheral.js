@@ -67,14 +67,15 @@ function install_default_peripherals(cpu){
         IRQ |=  ((vTCON & 0x20) >> 4) //    TF0 Timer 0 over flow
         IRQ |=  ((vTCON & 0x08) >> 1) //    IE1  external interrupt 1
         IRQ |=  ((vTCON & 0x80) >> 4) //    TF0 Timer 1 over flow
-        IRQ |=  ((((vSCON >> 1) & vSCON) & 1) << 4) //   serial
-        if (IRQ == 0)
-            return -1;
+        IRQ |=  ((((vSCON >> 1) | vSCON) & 1) << 4) //   serial
+
 
         let MAXIRQN = 5;
         let IRQMASK = (1 << MAXIRQN) - 1;
 
-        let vIRQEM = IRQMASK & IRQ & vIE;
+        let vIRQEM = IRQMASK & IRQ & vIE;        
+        if (vIRQEM == 0)
+            return -1
         let vIPM =   IRQMASK & ret.get("IP").get(); 
 
 
