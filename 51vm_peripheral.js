@@ -6,9 +6,9 @@ get_serial = function () {
 }
 get_interrupt = function () {
     return new Map([
-        [0x88, "IP"],
+        [0x88, "TCON"],
         [0xA8, "IE"],
-        [0xB8, "TCON"],
+        [0xB8, "IP"],
     ])
 }
 
