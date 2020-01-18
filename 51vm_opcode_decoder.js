@@ -1,6 +1,6 @@
 
 _51cpu.prototype.execute_one = function () {
-    let opcode = this.fetch_opcode();
+    let opcode = this.fetch_opcode()
     if (opcode.value < 0x80) {
         //0x00 - 0x7F
         if (opcode.value < 0x40) {
@@ -10,10 +10,10 @@ _51cpu.prototype.execute_one = function () {
         }
     } else {
         //0x80 - 0xFF
-        if (opcode.value < 0xB0) {
-            this.__execute_decode_80_AF(opcode)
+        if (opcode.value < 0xC0) {
+            this.__execute_decode_80_BF(opcode)
         } else {
-            this.__execute_decode_B0_FF(opcode)
+            this.__execute_decode_C0_FF(opcode)
         }
     }
 
@@ -30,22 +30,22 @@ _51cpu.prototype.__execute_decode_00_3F = function (opcode) {
     if (opcode.value < 0x20) {
         // 0x00 - 0x1F
         if (opcode.value < 0x10) {
-            this.__execute_decode_00_0F()
+            this.__execute_decode_00_0F(opcode)
         } else {
-            this.__execute_decode_10_1F()
+            this.__execute_decode_10_1F(opcode)
         }
     }
     else {
         // 0x20 - 0x3F
         if (opcode.value < 0x30) {
-            this.__execute_decode_20_2F()
+            this.__execute_decode_20_2F(opcode)
         } else {
-            this.__execute_decode_30_3F()
+            this.__execute_decode_30_3F(opcode)
         }
     }
 }
 
-_51cpu.prototype.__execute_decode_00_0F() = function (opcode) {
+_51cpu.prototype.__execute_decode_00_0F = function (opcode) {
     if (opcode.test(0x00)) {
         //NOP
     } else if (opcode.test(0x01, 0x1F)) {
@@ -77,7 +77,7 @@ _51cpu.prototype.__execute_decode_00_0F() = function (opcode) {
     }
 }
 
-_51cpu.prototype.__execute_decode_10_1F() = function (opcode) {
+_51cpu.prototype.__execute_decode_10_1F = function (opcode) {
     if (opcode.test(0x10)) {
         //JBC bit,offset
         let bit_cell = this.fetch_bit()
@@ -121,7 +121,7 @@ _51cpu.prototype.__execute_decode_10_1F() = function (opcode) {
     }
 }
 
-_51cpu.prototype.__execute_decode_20_2F() = function (opcode) {
+_51cpu.prototype.__execute_decode_20_2F = function (opcode) {
     if (opcode.test(0x20)) {
         //JB bit, offset
         let b = this.fetch_bit()
@@ -152,7 +152,7 @@ _51cpu.prototype.__execute_decode_20_2F() = function (opcode) {
     }
 }
 
-_51cpu.prototype.__execute_decode_30_3F() = function (opcode) {
+_51cpu.prototype.__execute_decode_30_3F = function (opcode) {
     if (opcode.test(0x30)) {
         //JNB bit,offset
         let bit = this.fetch_bit()
@@ -345,13 +345,13 @@ _51cpu.prototype.__execute_decode_70_7F = function (opcode) {
 _51cpu.prototype.__execute_decode_80_BF = function (opcode) {
 
     if (opcode.value < 0xA0) {
-        if (opcode < 0x90) {
+        if (opcode.value < 0x90) {
             this.__execute_decode_80_8F(opcode)
         } else {
             this.__execute_decode_90_9F(opcode)
         }
     } else {
-        if (opcode < 0xB0) {
+        if (opcode.value < 0xB0) {
             this.__execute_decode_A0_AF(opcode)
         } else {
             this.__execute_decode_B0_BF(opcode)
@@ -476,13 +476,13 @@ _51cpu.prototype.__execute_decode_B0_BF = function(opcode){
 
 _51cpu.prototype.__execute_decode_C0_FF = function (opcode) {
     if (opcode.value < 0xE0) {
-        if (opcode < 0xD0) {
+        if (opcode.value < 0xD0) {
             this.__execute_decode_C0_CF(opcode)
         } else {
             this.__execute_decode_D0_DF(opcode)
         }
     } else {
-        if (opcode < 0xF0) {
+        if (opcode.value < 0xF0) {
             this.__execute_decode_E0_EF(opcode)
         } else {
             this.__execute_decode_F0_FF(opcode)

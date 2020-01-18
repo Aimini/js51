@@ -22,6 +22,9 @@ _51cpu.prototype.op_dec = function (value) {
     return val
 }
 _51cpu.prototype.op_move = function (dest, src) {
+    
+    if (typeof (src) == "undefined")
+        throw "fuck"
     if (typeof (src) == "number")
         dest.set(src)
     else
