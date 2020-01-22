@@ -92,7 +92,7 @@ class _core51_operation_extend(_core51_operand_extend._core51_operand_extend):
         if (s > 0xFF):
             co = 1
         
-        if ((a & 0x0F) + (b & 0x0F) > 0x0F):
+        if ((a & 0x0F) + (b & 0x0F) + ci > 0x0F):
             ac = 1
         
 
