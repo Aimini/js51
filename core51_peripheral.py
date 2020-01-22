@@ -7,9 +7,9 @@ def get_serial():
 
 def get_interrupt():
     return {
-        0x88: "IP",
+        0x88: "TCON",
         0xA8: "IE",
-        0xB8: "TCON"
+        0xB8: "IP"
     }
 
 
