@@ -8,7 +8,15 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
 
     def execute_one(self):
         opcode = self.fetch_opcode()
-        if opcode.value < 0x80:
+        if opcode.test(0x01, 0x1F):
+            #AJMP addr11
+            addr11 = ((opcode.value << 3) & 0x700) | int(self.fetch_const())
+            self.PC.set(addr11)
+        elif opcode.test(0x11, 0x1F):
+            #ACALL 0x11
+            addr11 = ((opcode.value << 3) & 0x700) | int(self.fetch_const())
+            self.op_call(addr11)
+        elif opcode.value < 0x80:
             #0x00 - 0x7F
             if opcode.value < 0x40:
                 self.__execute_decode_00_3F(opcode)
@@ -56,10 +64,6 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
         if opcode.test(0x00):
             #NOP
             pass
-        elif opcode.test(0x01, 0x1F):
-            #AJMP addr11
-            addr11 = ((opcode.value << 3) & 0x700) | int(self.fetch_const())
-            self.PC.set(addr11)
         elif opcode.test(0x02):
             #LJMP addr16
             self.PC.set(self.fetch_const16())
@@ -89,10 +93,6 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
             offset_raw = self.fetch_const()
             self.op_condition_jump(bit_cell, offset_raw)
             bit_cell.set(0)
-        elif opcode.test(0x11, 0x1F):
-            #ACALL 0x11
-            addr11 = ((opcode.value << 3) & 0x700) | int(self.fetch_const())
-            self.op_call(addr11)
         elif opcode.test(0x12):
             #LCALL addr16
             self.op_call(self.fetch_const16())
