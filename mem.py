@@ -14,7 +14,7 @@ class mem:
         return self.value
 
     def _set_no_listened(self,value):
-        self.value = value
+        self.value = value & self.max
 
     def get(self):
         for l in self.get_listener:
