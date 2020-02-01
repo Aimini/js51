@@ -12,8 +12,14 @@ class core51(_core51_decoder_extend._core51_decoder_extend):
         for _ in range(count):
             #fh.write(self.text_snapshot())
             #fh.write('\n')
+            opcode_PC = int(self.PC)
+
             self.count += 1
-            self.execute_one()
+            try:
+                self.execute_one()
+            except Exception as e:
+                raise Exception(str(e) + " at PC[0x{:0>4X}]".format(opcode_PC))
+
             if int(self.PC) in self.addr_breakpoint:
                 return False
             if int(self.PC) >= len(self.ROM):

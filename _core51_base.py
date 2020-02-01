@@ -115,15 +115,33 @@ class _core51_base:
 
 
         return ret
+    def get_iram(self,addr):
+        if addr < len(self.IRAM):
+            return self.IRAM[addr]
+
+        raise IndexError("access invalid direct address 0x{:0>2X}".format(addr))
+        
 
     def get_ram(self,addr):
         if addr < 0x80:
             return self.IRAM[addr]
+        elif addr < 0x100:
+            return self.get_sfr_by_addr(addr)
         else:
-            return self.SFRRAM[addr]
-            
-    def get_sfr(self, name):
-        return self.SFRRAM[self.sfr_name[name]]
+            raise IndexError("access invalid direct address 0x{:0>2X}".format(addr))
+
+    def get_sfr_by_name(self, name: str):
+        addr = self.sfr_name.get(name)
+        if addr is not None:
+            return self.SFRRAM[self.sfr_name[name]]
+        else:
+            raise NameError("no sfr named \"{}\"".format(name))
+
+    def get_sfr_by_addr(self, addr: int):
+        s = self.SFRRAM[addr]
+        if s is None:
+            raise IndexError("none SFR mapped at address 0x{:0>2X}".format(addr))
+        return s
 
     def reset(self):
         """reset all core register.(doesn't include sfr and ram)"""
