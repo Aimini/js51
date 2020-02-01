@@ -11,10 +11,12 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
         if opcode.test(0x01, 0x1F):
             #AJMP addr11
             addr11 = ((opcode.value << 3) & 0x700) | int(self.fetch_const())
+            addr11 = (self.PC.get() & 0xF800) |  addr11
             self.PC.set(addr11)
         elif opcode.test(0x11, 0x1F):
             #ACALL 0x11
             addr11 = ((opcode.value << 3) & 0x700) | int(self.fetch_const())
+            addr11 = (self.PC.get() & 0xF800) |  addr11
             self.op_call(addr11)
         elif opcode.value < 0x80:
             #0x00 - 0x7F
