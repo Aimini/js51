@@ -1,3 +1,5 @@
+import mem
+
 def get_serial():
     return {
         0x98: "SCON",
@@ -54,11 +56,18 @@ def install_default_peripherals(core):
         **core.sfr_extend(get_interrupt()),
         **core.sfr_extend(get_ports())
         }
-    
+
+    ISR = mem.mem(0, 2)
+    setattr(core,"ISR",ISR)
+
     def default_irq():
+        core # for debug
         vIE = int(ret["IE"])
         if vIE & 0x80 == 0:
             return -1
+
+
+
         rTCON = ret["TCON"]
         rSCON = ret["SCON"]
         vTCON = int(rTCON)
@@ -71,6 +80,7 @@ def install_default_peripherals(core):
         IRQ |=  ((((vSCON >> 1) | vSCON) & 1) << 4) # serial
 
 
+        
         MAXIRQN = 5
         IRQMASK = (1 << MAXIRQN) - 1
         vIRQEM = IRQMASK & IRQ & vIE
@@ -78,26 +88,52 @@ def install_default_peripherals(core):
             return -1
         vIPM =   IRQMASK & int(ret["IP"])
 
-
-        sel = (vIRQEM << MAXIRQN) | (vIRQEM & vIPM) # priority have high priorty
         IRQN = 0
-        for i in range(2*MAXIRQN):
-            if sel & (1 << i):
-                IRQN = i
+        IRQIP = 0
+        while True:
+            if ISR[1] == 1:
+                return -1
+            # is there any interrupt with IP == 1?
+            sel = vIRQEM & vIPM 
+            IRQN = bin(sel)[::-1].find('1')
+            if IRQN != -1:
+                IRQIP = 1
                 break
 
-        IRQN %= MAXIRQN
+            if ISR[0] == 1:
+                return -1
+            sel = vIRQEM
+            IRQN = bin(sel)[::-1].find('1')
+            if IRQN != -1:
+                IRQIP = 0
+                break
+
+            return -1
+
+        ISR[IRQIP] = 1
+
         # hardware clear irq flag;
         if IRQN == 0:
-            rTCON.set(rTCON.get() & 0xFD)
+            rTCON.set(rTCON.get() & 0xFD) # CLR IE0
         elif IRQN == 1:
-            rTCON.set(rTCON.get() & 0xDF)
+            rTCON.set(rTCON.get() & 0xDF) # CLR TF0
         elif IRQN == 2:
-            rTCON.set(rTCON.get() & 0xF7)
+            rTCON.set(rTCON.get() & 0xF7) # CLR IE1
         elif IRQN == 3:
-            rTCON.set(rTCON.get() & 0x7F)
+            rTCON.set(rTCON.get() & 0x7F) # CLR TF0
         
         return IRQN
     
-    core.irq.append(default_irq)
+    def interrupt_serviced_end():
+        core # for debug
+        s = bin(int(ISR))
+        idx = s.find('1')
+        if idx == -1:
+            return
+        sl = list(s)
+        sl[idx] = '0'
+        s = ''.join(sl)
+        ISR.set(int(s,2))
 
+    core.irq.append(default_irq)
+    core.interrupt_end_linstener.append(interrupt_serviced_end)
