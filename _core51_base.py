@@ -49,7 +49,7 @@ class _core51_base:
         ############################
         # IRAM, XRAM, ROM
         self.XRAM = [mem.mem() for _ in range(0x10000)]
-        self.IRAM = [mem.mem() for _ in range(0x80)]
+        self.IRAM = [mem.mem() for _ in range(0x100)]
 
         
         self.ROM  = []

@@ -10,7 +10,7 @@ parser.add_argument('-i', '--input-file',   dest='input_file', action='store', h
 
 dbgarg = ["-i", R"test_hex\int_test.hex"]
 
-args = parser.parse_args(dbgarg)
+args = parser.parse_args()
 
 
 run_flag = True

@@ -10,10 +10,10 @@ class opcode:
 
     def ri(self):
         
-        return self._core51_obj.get_ram(int(self.riaddr()))
+        return self._core51_obj.get_iram(int(self.riaddr()))
 
     def riaddr(self):
-        return self._core51_obj.get_ram(self.Ri_addr)
+        return self._core51_obj.get_iram(self.Ri_addr)
     
     def rn(self):
         return self._core51_obj.get_ram(self.Rn_addr)
