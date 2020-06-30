@@ -1,8 +1,8 @@
-import _core51_decoder_extend
+from ._core51_decoder_extend import _core51_decoder_extend
 
 #fh = open(R"C:\Users\startAI\Desktop\wrong.log","w")
 
-class core51(_core51_decoder_extend._core51_decoder_extend):
+class core51(_core51_decoder_extend):
     def __init__(self):
         super().__init__()
         self.addr_breakpoint = []

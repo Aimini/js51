@@ -1,4 +1,5 @@
-import mem
+from ..mem import mem
+
 class mem_dptr(mem.mem):
     def __init__(self, dpl_obj, dph_obj):
         super().__init__(0, 16)

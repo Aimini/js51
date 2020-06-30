@@ -1,9 +1,9 @@
 
 ##include all instruction opreation
-import _core51_operand_extend
-import mem
+from ._core51_operand_extend import _core51_operand_extend
+from ..mem.mem import mem
 
-class _core51_operation_extend(_core51_operand_extend._core51_operand_extend):
+class _core51_operation_extend(_core51_operand_extend):
     def __init__(self):
         super().__init__()
 
@@ -58,7 +58,7 @@ class _core51_operation_extend(_core51_operand_extend._core51_operand_extend):
 
 
     def op_ret(self):
-        temp = mem.mem()
+        temp = mem()
         self.op_pop(temp)
         high8bit = int(temp)
         self.op_pop(temp)

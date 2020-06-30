@@ -1,4 +1,3 @@
-import mem
 
 
 class mem_bit_ref():

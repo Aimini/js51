@@ -1,6 +1,6 @@
-import _core51_operation_extend
-import mem_bit_ref
-class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
+from ._core51_operation_extend import _core51_operation_extend
+from ..mem.mem_bit_ref import mem_bit_ref
+class _core51_decoder_extend(_core51_operation_extend):
     def __init__(self):
         super().__init__()
         self.interrupt_end_linstener = []
@@ -197,7 +197,7 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
     def __execute_decode_40_4F (self, opcode):
         if opcode.test(0x40):
             #JC offset
-            CY = mem_bit_ref.mem_bit_ref(self.PSW,7)
+            CY = mem_bit_ref(self.PSW,7)
             self.op_condition_jump(CY, self.fetch_const())
         elif opcode.test(0x42):
             #ORL direct,A
@@ -227,7 +227,7 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
     def __execute_decode_50_5F (self, opcode):
         if opcode.test(0x50):
             #JNC offset
-            CY = mem_bit_ref.mem_bit_ref(self.PSW, 7)
+            CY = mem_bit_ref(self.PSW, 7)
             self.op_not_condition_jump(CY, self.fetch_const())
         elif opcode.test(0x52):
             #ANL direct,A
@@ -290,7 +290,7 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
                 self.op_sjump(offset_raw)
         elif opcode.test(0x72):
             #ORL C,bit
-            CY = mem_bit_ref.mem_bit_ref(self.PSW, 7)
+            CY = mem_bit_ref(self.PSW, 7)
             self.op_orl_bit(CY, self.fetch_bit())
         elif opcode.test(0x73):
             #JMP @A+DPTR
@@ -337,7 +337,7 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
             self.op_sjump(self.fetch_const())
         elif opcode.test(0x82):
             #ANL C,bit
-            CY = mem_bit_ref.mem_bit_ref(self.PSW, 7)
+            CY = mem_bit_ref(self.PSW, 7)
             self.op_anl_bit(CY, self.fetch_bit())
         elif opcode.test(0x83):
             #MOVC A, @A+PC
@@ -366,7 +366,7 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
             self.DPTR.set(self.fetch_const16())
         elif opcode.test(0x92):
             #MOV bit,C
-            CY = mem_bit_ref.mem_bit_ref(self.PSW, 7)
+            CY = mem_bit_ref(self.PSW, 7)
             self.op_move(self.fetch_bit(), CY)
         elif opcode.test(0x93):
             #MOVC A,@A+DPTR
@@ -390,11 +390,11 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
     def __execute_decode_A0_AF(self, opcode):
         if opcode.test(0xA0):
             # ORL C,/bit
-            CY = mem_bit_ref.mem_bit_ref(self.PSW, 7)
+            CY = mem_bit_ref(self.PSW, 7)
             self.op_orl_bit(CY, self.fetch_bit(), True)
         elif opcode.test(0xA2):
             # MOV C,bit
-            CY = mem_bit_ref.mem_bit_ref(self.PSW, 7)
+            CY = mem_bit_ref(self.PSW, 7)
             self.op_move(CY, self.fetch_bit())
         elif opcode.test(0xA3):
             # INC DPTR
@@ -418,14 +418,14 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
     def __execute_decode_B0_BF(self, opcode):
         if opcode.test(0xB0):
             #ANL C,/bit
-            CY = mem_bit_ref.mem_bit_ref(self.PSW, 7)
+            CY = mem_bit_ref(self.PSW, 7)
             self.op_anl_bit(CY, self.fetch_bit(), True)
         elif opcode.test(0xB2):
             #CPL bit
             self.op_cpl(self.fetch_bit())
         elif opcode.test(0xB3):
             #CPL C
-            CY = mem_bit_ref.mem_bit_ref(self.PSW, 7)
+            CY = mem_bit_ref(self.PSW, 7)
             self.op_cpl(CY)
         elif opcode.test(0xB4):
             #CJNE A,#immed,offset
@@ -477,7 +477,7 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
             self.fetch_bit().set(0)
         elif opcode.test(0xC3):
             #CLR C
-            CY = mem_bit_ref.mem_bit_ref(self.PSW, 7)
+            CY = mem_bit_ref(self.PSW, 7)
             CY.set(0)
         elif opcode.test(0xC4):
             #SWAP A
@@ -506,7 +506,7 @@ class _core51_decoder_extend(_core51_operation_extend._core51_operation_extend):
             self.fetch_bit().set(1)
         elif opcode.test(0xD3):
             #SETB C
-            CY = mem_bit_ref.mem_bit_ref(self.PSW, 7)
+            CY = mem_bit_ref(self.PSW, 7)
             CY.set(1)
         elif opcode.test(0xD4):
             #DA A

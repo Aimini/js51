@@ -1,4 +1,4 @@
-import mem
+from ..mem import mem
 
 def get_serial():
     return {

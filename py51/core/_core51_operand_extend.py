@@ -1,5 +1,5 @@
-import _core51_base
-import mem_bit_ref
+from ._core51_base import _core51_base
+from ..mem.mem_bit_ref import mem_bit_ref
 class opcode:
     def __init__(self, value, _core51_obj):
         self.value = value
@@ -27,7 +27,7 @@ class opcode:
     #     return comb
     # }
 
-class _core51_operand_extend(_core51_base._core51_base):
+class _core51_operand_extend(_core51_base):
     def __init__(self):
         super().__init__()
 
@@ -66,4 +66,4 @@ class _core51_operand_extend(_core51_base._core51_base):
             addr = bit_addr & 0xF8
 
         self.PC += 1
-        return mem_bit_ref.mem_bit_ref(self.get_ram(addr), bit_index)
+        return mem_bit_ref(self.get_ram(addr), bit_index)
