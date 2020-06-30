@@ -18,6 +18,14 @@
             "program": "${workspaceFolder}/51simtest.py",
             "args": ["-i", "test_hex/int_test.hex"],
             "console": "integratedTerminal"
+        },
+        {
+            "name": "load immed 256 IRAM",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/51simtest.py",
+            "args": ["-i", "test_hex/76_77_MOV_Ri_i.hex"],
+            "console": "integratedTerminal"
         }
     ]
 }

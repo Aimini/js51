@@ -1,0 +1,3 @@
+*.pyc
+/test_hex/*
+/.vscode/*
