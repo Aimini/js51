@@ -51,7 +51,7 @@ memory.prototype.set = function(idx,value){
 }
     
 
-function _51cpu() {
+function _51cpu(IRAMSize = 0x100, XRAMSize = 0x10000) {
     this.A = new reg()
     this.B = new reg()
     this.PSW = new reg()
@@ -60,7 +60,7 @@ function _51cpu() {
     this.DPTR = new reg(0, 16)
     this.DPL = new reg()
     this.DPH = new reg()
-    this.ERAM = []
+    this.XRAM = []
     this.IRAM = []
     this.IDATA = new memory()
     this.SFR = {
@@ -72,9 +72,11 @@ function _51cpu() {
         0xF0: "B",
     }
 
-    for (let i = 0; i < 128; ++i)
+    for (let i = 0; i < IRAMSize; ++i)
         this.IRAM.push(0);
-
+    for (let i = 0; i < XRAMSize; ++i)
+        this.XRAM.push(0);
+        
     let cpu_ref = this;
 
     this.DPL.get = function () {

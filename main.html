@@ -122,6 +122,7 @@
 
 
         function initReg() {
+            createRAMcell()
             install_default_peripherals(vm)
 
             let lookingCallback = []
@@ -166,6 +167,31 @@
                 vm.SCON.set(scon)
             })
         }
+        function createRAMcell() {
+            let ram = document.querySelector("#ram")
+            let n_row = vm.IRAM.length / 16;
+
+            for (let i = 0; i < n_row; ++i) {
+                for (let k = 0; k < 2; ++k) {
+
+                    let row = document.createElement("span")
+                    row.classList.add("row")
+                    if(k == 0) row.innerHTML = "0x" + i.toString(16) +"0:";
+                    for (let j = 0; j < 8; ++j) {
+                        let cell = document.createElement("span")
+                        cell.classList.add("cell")
+                        cell.innerText = "00"
+                        row.appendChild(cell)
+                    }
+
+                    ram.appendChild(row)
+                }
+                let split = document.createElement("span")
+                split.style.flexBasis = '100%'
+                ram.appendChild(split)
+            }
+        }
+
 
         function readfile() {
             let file = null
@@ -282,6 +308,7 @@
         #ram .row .cell {
             transition-duration: .2s;
             padding: 0em .2em;
+            width: 2em;
         }
 
         #ram .row .cell:hover {
@@ -328,268 +355,99 @@
 
 
 <body onload="initReg()">
-    <span id="reg-a" class="reg">
-        <span class="title">
-            <span class="name">A</span>
-            <span class="type">HEX</span>
+    <span>
+        <span id='ram'>
+            <span class="title">RAM</span>
         </span>
-        <span class="value">00</span>
-    </span>
-    <span id="reg-b" class="reg">
-        <span class="title">
-            <span class="name">B</span>
-            <span class="type">HEX</span>
+
+        <span style="flex-basis: 100%">
+            <span id="reg-a" class="reg">
+                <span class="title">
+                    <span class="name">A</span>
+                    <span class="type">HEX</span>
+                </span>
+                <span class="value">00</span>
+            </span>
+            <span id="reg-b" class="reg">
+                <span class="title">
+                    <span class="name">B</span>
+                    <span class="type">HEX</span>
+                </span>
+                <span class="value">00</span>
+            </span>
+            <span id="reg-sp" class="reg">
+                <span class="title">
+                    <span class="name">SP</span>
+                    <span class="type">HEX</span>
+                </span>
+                <span class="value">00</span>
+            </span>
+            <span id="reg-psw" class="reg">
+                <span class="title">
+                    <span class="name">PSW</span>
+                    <span class="type">HEX</span>
+                </span>
+                <span class="value">00</span>
+            </span>
+            <span id="reg-dptr" class="reg reg16">
+                <span class="title">
+                    <span class="name">DPTR</span>
+                    <span class="type">HEX</span>
+                </span>
+                <span class="value">00 00</span>
+            </span>
+            <span id="reg-pc" class="reg reg16">
+                <span class="title">
+                    <span class="name">PC</span>
+                    <span class="type">HEX</span>
+                </span>
+                <span class="value">00 00</span>
+            </span>
+
+
+            <span id="reg-p0" class="reg">
+                <span class="title">
+                    <span class="name">P0</span>
+                    <span class="type">HEX</span>
+                </span>
+                <span class="value">00 00</span>
+            </span>
+            <span id="reg-p1" class="reg">
+                <span class="title">
+                    <span class="name">P1</span>
+                    <span class="type">HEX</span>
+                </span>
+                <span class="value">00 00</span>
+            </span>
+            <span id="reg-p2" class="reg">
+                <span class="title">
+                    <span class="name">P2</span>
+                    <span class="type">HEX</span>
+                </span>
+                <span class="value">00 00</span>
+            </span>
+            <span id="reg-p3" class="reg">
+                <span class="title">
+                    <span class="name">P3</span>
+                    <span class="type">HEX</span>
+                </span>
+                <span class="value">00 00</span>
+            </span>
+            <input type="file" value="../keil_51vm/51vm.bin" accept=".bin,.hex" onchange="readfile.call(this)" />
+            <button type="button" id="btn-start" onclick="start_or_pause()">开始</button>
+            <button type="button" id="btn-reset" onclick="reset()">重置</button>
+            <button type="button" id="btn-reset" onclick="set_ext_interrupt(0)">int0</button>
+            <button type="button" id="btn-reset" onclick="set_ext_interrupt(1)">int1</button>
         </span>
-        <span class="value">00</span>
-    </span>
-    <span id="reg-sp" class="reg">
-        <span class="title">
-            <span class="name">SP</span>
-            <span class="type">HEX</span>
-        </span>
-        <span class="value">00</span>
-    </span>
-    <span id="reg-psw" class="reg">
-        <span class="title">
-            <span class="name">PSW</span>
-            <span class="type">HEX</span>
-        </span>
-        <span class="value">00</span>
-    </span>
-    <span id="reg-dptr" class="reg reg16">
-        <span class="title">
-            <span class="name">DPTR</span>
-            <span class="type">HEX</span>
-        </span>
-        <span class="value">00 00</span>
-    </span>
-    <span id="reg-pc" class="reg reg16">
-        <span class="title">
-            <span class="name">PC</span>
-            <span class="type">HEX</span>
-        </span>
-        <span class="value">00 00</span>
-    </span>
-    <span style="flex-basis: 100%"></span>
-    <span id='ram'>
-        <span class="title">RAM</span>
-        <span class="row">
-            0x00:
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span class="row">
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span style="flex-basis: 100%"></span>
-        <span class="row">
-            0x10:
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span class="row">
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span style="flex-basis: 100%"></span>
-        <span class="row">
-            0x20:
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span class="row">
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span style="flex-basis: 100%"></span>
-        <span class="row">
-            0x30:
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span class="row">
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span style="flex-basis: 100%"></span>
-        <span class="row">
-            0x40:
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span class="row">
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span style="flex-basis: 100%"></span>
-        <span class="row">
-            0x50:
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span class="row">
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span style="flex-basis: 100%"></span>
-        <span class="row">
-            0x60:
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span class="row">
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span style="flex-basis: 100%"></span>
-        <span class="row">
-            0x70:
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span class="row">
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-            <span class="cell">00</span>
-        </span>
-        <span style="flex-basis: 100%"></span>
     </span>
 
-    <span id="reg-p0" class="reg">
-        <span class="title">
-            <span class="name">P0</span>
-            <span class="type">HEX</span>
-        </span>
-        <span class="value">00 00</span>
-    </span>
-    <span id="reg-p1" class="reg">
-        <span class="title">
-            <span class="name">P1</span>
-            <span class="type">HEX</span>
-        </span>
-        <span class="value">00 00</span>
-    </span>
-    <span id="reg-p2" class="reg">
-        <span class="title">
-            <span class="name">P2</span>
-            <span class="type">HEX</span>
-        </span>
-        <span class="value">00 00</span>
-    </span>
-    <span id="reg-p3" class="reg">
-        <span class="title">
-            <span class="name">P3</span>
-            <span class="type">HEX</span>
-        </span>
-        <span class="value">00 00</span>
-    </span>
-    <input type="file" value="../keil_51vm/51vm.bin" accept=".bin,.hex" onchange="readfile.call(this)" />
-    <button type="button" id="btn-start" onclick="start_or_pause()">开始</button>
-    <button type="button" id="btn-reset" onclick="reset()">重置</button>
-    <button type="button" id="btn-reset" onclick="set_ext_interrupt(0)">int0</button>
-    <button type="button" id="btn-reset" onclick="set_ext_interrupt(1)">int1</button>
     <div id="virtual-terminal">
         <div>
             <button type="button" id="btn-clear-terminal" onclick="clear_terminal()">清空</button><span>虚拟终端:</span>
         </div>
         <div id='terminal-content'></div>
     </div>
+
 </body>
 
 </html>

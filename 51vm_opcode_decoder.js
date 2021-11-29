@@ -562,11 +562,11 @@ _51cpu.prototype.__execute_decode_E0_EF = function (opcode) {
 
     if (opcode.test(0xE0)) {
         //MOVX A,@DPTR
-        this.A.set(this.ERAM[this.DPTR.get()])
+        this.A.set(this.XRAM[this.DPTR.get()])
     } else if (opcode.test(0xE2, 0xFE)) {
         //MOVX A,@Ri
         let Ri = opcode.get_Ri()
-        Ri.ram = this.ERAM
+        Ri.ram = this.XRAM
         this.op_move(this.A, Ri)
     } else if (opcode.test(0xE4)) {
         //CLR A
@@ -587,11 +587,11 @@ _51cpu.prototype.__execute_decode_E0_EF = function (opcode) {
 _51cpu.prototype.__execute_decode_F0_FF = function (opcode) {
     if (opcode.test(0xF0)) {
         //MOVX @DPTR,A
-        this.ERAM[this.DPTR.get()] = this.A.get()
+        this.XRAM[this.DPTR.get()] = this.A.get()
     } else if (opcode.test(0xF2, 0xFE)) {
         //MOVX @Ri,A
         let Ri = opcode.get_Ri()
-        Ri.ram = this.ERAM
+        Ri.ram = this.XRAM
         this.op_move(Ri, this.A)
     } else if (opcode.test(0xF4)) {
         //CPL A
