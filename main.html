@@ -14,32 +14,62 @@
     <script src="hex_decoder.js"></script>
     <script>
 
-
+        let vm = new _51cpu(0x100, 0x10000)
         let value_type = ["HEX", "DEC", "BIN"]
-        let run_interval_id = -1
+        let running = 1
+
         function excute_tick() {
-            vm.next(2000)
+            if(running)
+            {
+                for(let i = 0; i < 2000; ++i){
+                    if(vm.error_info.code == CPU_NO_ERROR)
+                    {
+                        vm.next(1)
+                    }
+                }
+            }
+
+            let message = ""
+            if(vm.error_info.code != CPU_NO_ERROR)
+            {
+                switch (vm.error_info.code) {
+                case CPU_NO_ERROR:
+                    break
+                case  CPU_ERROR_INVALID_IRAM_ADDRESS:
+                    message = "access invalid IRAM address at 0x" + vm.error_info.addr.toString(16)
+                    break
+                case  CPU_ERROR_INVALID_ROM_ADDRESS:
+                    message = "access invalid ROM address at 0x" + vm.error_info.addr.toString(16)
+                    break
+                case  CPU_ERROR_INVALID_SFR_ADDRESS:
+                    message = "access invalid SFR address at 0x" + vm.error_info.addr.toString(16)
+                    break
+                case  CPU_ERROR_INVALID_XRAM_ADDRESS:
+                    message = "access invalid XRAM address at 0x" + vm.error_info.addr.toString(16)
+                    break
+               }
+            }
+            document.getElementById("error-info").innerText = message
         }
 
+        setInterval(excute_tick, 1)
+
         function start_or_pause() {
-            // 0 meaning paused of stopped
-            if (run_interval_id <= 0) {
-                run_interval_id = setInterval(excute_tick, 1)
-                document.getElementById("btn-start").innerText = "暂停"
-            } else {
-                clearInterval(run_interval_id)
-                run_interval_id = -1
+            // 0 meaning paused of stopped in
+            if (running) {
+                running = 0
                 document.getElementById("btn-start").innerText = "继续"
+            } else if( vm.error_info.code == CPU_NO_ERROR) {
+                running = 1
+                document.getElementById("btn-start").innerText = "暂停"
             }
         }
 
         function reset() {
-            if (run_interval_id > 0) {
-                clearInterval(run_interval_id)
-                run_interval_id = -1
-            }
             vm.reset()
+            running = 0
             document.getElementById("btn-start").innerText = "开始"
+            document.getElementById("error-info").innerText = ""
         }
 
 
@@ -113,6 +143,7 @@
 
             dom_type.onclick = function () {
                 change_type.apply(this)
+                set_dom_value(dom_value, reg.get(), dom_type.value, reg_bit_len)
             }
             return function () {
                 if (dom_value.value != reg.get())
@@ -166,6 +197,8 @@
                 scon |= 0x02
                 vm.SCON.set(scon)
             })
+            
+            reset()
         }
         function createRAMcell() {
             let ram = document.querySelector("#ram")
@@ -211,13 +244,13 @@
                 //将文件以二进制形式读入页面 
                 reader.readAsArrayBuffer(file);
                 reader.onloadend = function (f) {
-                    vm.IDATA.content = new Uint8Array(reader.result)
+                    vm.IDATA = new Uint8Array(reader.result)
                 }
             } else if (fileSuffix == ".hex") {
                 let reader = new FileReader()
                 reader.readAsText(file)
                 reader.onloadend = function () {
-                    vm.IDATA.content = decode_ihex(reader.result);
+                    vm.IDATA = decode_ihex(reader.result);
                 }
             }
         }
@@ -350,6 +383,11 @@
             overflow: scroll;
             white-space: pre;
         }
+
+        #error-info {
+            color: read;
+            size:   2em;
+        }
     </style>
 </head>
 
@@ -439,6 +477,7 @@
             <button type="button" id="btn-reset" onclick="set_ext_interrupt(0)">int0</button>
             <button type="button" id="btn-reset" onclick="set_ext_interrupt(1)">int1</button>
         </span>
+        <span id="error-info"></span>
     </span>
 
     <div id="virtual-terminal">

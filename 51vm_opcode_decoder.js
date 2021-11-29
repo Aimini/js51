@@ -369,7 +369,7 @@ _51cpu.prototype.__execute_decode_80_8F = function(opcode){
         this.op_anl_bit(this.fetch_bit())
     } else if (opcode.test(0x83)) {
         //MOVC A, @A+PC
-        this.op_move(this.A, this.IDATA.get(this.A.get() + this.PC.get()))
+        this.op_move(this.A, this.get_ROM(this.A.get() + this.PC.get()))
     } else if (opcode.test(0x84)) {
         //DIV AB
         this.op_div()
@@ -397,7 +397,7 @@ _51cpu.prototype.__execute_decode_90_9F = function(opcode){
         this.op_move(this.fetch_bit(), this.PSW.carry)
     } else if (opcode.test(0x93)) {
         //MOV A,@A+DPTR
-        this.op_move(this.A, this.IDATA.get(this.A.get() + this.DPTR.get()))
+        this.op_move(this.A, this.get_ROM(this.A.get() + this.DPTR.get()))
     } else if (opcode.test(0x94)) {
         //SUBB A,#immed
         this.op_subb(this.A, this.fetch_const())
@@ -494,7 +494,7 @@ _51cpu.prototype.__execute_decode_C0_FF = function (opcode) {
 _51cpu.prototype.__execute_decode_C0_CF = function (opcode) {
     if (opcode.test(0xC0)) {
         //PUSH direct
-        this.op_push(this.fetch_direct())
+        this.op_push(this.fetch_direct().get())
     } else if (opcode.test(0xC2)) {
         //CLR bit
         this.fetch_bit().set(0)
@@ -562,11 +562,10 @@ _51cpu.prototype.__execute_decode_E0_EF = function (opcode) {
 
     if (opcode.test(0xE0)) {
         //MOVX A,@DPTR
-        this.A.set(this.XRAM[this.DPTR.get()])
+        this.A.set(this.get_XRAM_cell(this.DPTR.get()).get())
     } else if (opcode.test(0xE2, 0xFE)) {
         //MOVX A,@Ri
-        let Ri = opcode.get_Ri()
-        Ri.ram = this.XRAM
+        let Ri = opcode.get_XRi()
         this.op_move(this.A, Ri)
     } else if (opcode.test(0xE4)) {
         //CLR A
@@ -587,11 +586,10 @@ _51cpu.prototype.__execute_decode_E0_EF = function (opcode) {
 _51cpu.prototype.__execute_decode_F0_FF = function (opcode) {
     if (opcode.test(0xF0)) {
         //MOVX @DPTR,A
-        this.XRAM[this.DPTR.get()] = this.A.get()
+        this.get_XRAM_cell(this.DPTR.get()).set(this.A.get())
     } else if (opcode.test(0xF2, 0xFE)) {
         //MOVX @Ri,A
-        let Ri = opcode.get_Ri()
-        Ri.ram = this.XRAM
+        let Ri = opcode.get_XRi()
         this.op_move(Ri, this.A)
     } else if (opcode.test(0xF4)) {
         //CPL A

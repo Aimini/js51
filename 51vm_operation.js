@@ -22,7 +22,7 @@ _51cpu.prototype.op_dec = function (value) {
     return val
 }
 _51cpu.prototype.op_move = function (dest, src) {
-    
+
     if (typeof (src) == "undefined")
         throw "fuck"
     if (typeof (src) == "number")
@@ -50,17 +50,18 @@ _51cpu.prototype.op_add_offset = function (offset_raw) {
     this.PC.set(pt + offset)
 }
 
-_51cpu.prototype.op_push = function (store_cell) {
+_51cpu.prototype.op_push = function (value) {
     let sp = this.SP.inc().get()
-    this.IRAM[sp] = typeof (store_cell) == "number" ? store_cell : store_cell.get()
+    this.get_iram_cell(sp).set(value)
+
     return this
 }
 
 _51cpu.prototype.op_pop = function (store_cell) {
     let sp = this.SP.get()
-    store_cell.set(this.IRAM[sp])
+    store_cell.set(this.get_iram_cell(sp).get())
     this.SP.dec()
-
+    
     return this
 }
 
@@ -174,7 +175,7 @@ _51cpu.prototype.op_div = function(){
     {
         this.PSW.set(this.PSW.get() | 0x04)
     }else{
-        
+
     let quotient = Math.floor(a/b)
     let remainder = a % b
     this.A.set(quotient)
@@ -205,7 +206,7 @@ _51cpu.prototype.op_cjne = function(dest,src,offset_raw){
     let b = typeof(src) == "number" ? src: src.get()
     let result = a - b
     this.PSW.carry.set(0)
-    if(result != 0){ 
+    if(result != 0){
         this.op_add_offset(offset_raw)
         if(result < 0){
             this.PSW.carry.set(1)

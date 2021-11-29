@@ -27,7 +27,7 @@ function decode_ihex(text){
         if(data_type !== 0x00)
             throw "unexcept segment type" + data_type
 
-        IDATA.extend_to(start_addr + data_len,0)
+        IDATA.extend_to(start_addr + data_len, null)
         for(let i = 0; i < data_len; ++i){
             let offset = 2*i + 8;
             IDATA[start_addr + i] = subp.subHex(offset, offset + 2)

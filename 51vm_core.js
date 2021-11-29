@@ -1,3 +1,8 @@
+let CPU_NO_ERROR = 0
+let CPU_ERROR_INVALID_IRAM_ADDRESS   =  2  // 
+let CPU_ERROR_INVALID_ROM_ADDRESS    = 3 // try to read the ROM where doesn't have data
+let CPU_ERROR_INVALID_SFR_ADDRESS    = 4
+let CPU_ERROR_INVALID_XRAM_ADDRESS   = 5
 function reg(value = 0, bitlen = 8) {
     this._value = value;
     this.bitlen = bitlen
@@ -62,7 +67,7 @@ function _51cpu(IRAMSize = 0x100, XRAMSize = 0x10000) {
     this.DPH = new reg()
     this.XRAM = []
     this.IRAM = []
-    this.IDATA = new memory()
+    this.IDATA = []
     this.SFR = {
         0x81: "SP",
         0x82: "DPL",
@@ -71,12 +76,16 @@ function _51cpu(IRAMSize = 0x100, XRAMSize = 0x10000) {
         0xE0: "A",
         0xF0: "B",
     }
-
+    this.error_info = {
+        code : CPU_NO_ERROR,
+        addr : 0
+    }
+    
     for (let i = 0; i < IRAMSize; ++i)
         this.IRAM.push(0);
     for (let i = 0; i < XRAMSize; ++i)
         this.XRAM.push(0);
-        
+
     let cpu_ref = this;
 
     this.DPL.get = function () {
@@ -179,6 +188,7 @@ _51cpu.prototype.sfr_extend = function (ext_package) {
  */
 
 _51cpu.prototype.reset = function () {
+    this.error_info.code = CPU_NO_ERROR
     this.A.set(0)
     this.B.set(0)
     this.PSW.set(0)
