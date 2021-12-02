@@ -1,7 +1,13 @@
 
 _51cpu.prototype.execute_one = function () {
-    let opcode = this.fetch_opcode()
-    if (opcode.value < 0x80) {
+    let opcode = this.fetch_opcode() 
+    if (opcode.test(0x01, 0x1F)) {
+        //AJMP addr11
+        this.PC.set(opcode.fetch_addr11())
+    }else if (opcode.test(0x11, 0x1F)) {
+        //ACALL 0x11
+        this.op_call(opcode.fetch_addr11())
+    }else if (opcode.value < 0x80) {
         //0x00 - 0x7F
         if (opcode.value < 0x40) {
             this.__execute_decode_00_3F(opcode)
@@ -48,9 +54,6 @@ _51cpu.prototype.__execute_decode_00_3F = function (opcode) {
 _51cpu.prototype.__execute_decode_00_0F = function (opcode) {
     if (opcode.test(0x00)) {
         //NOP
-    } else if (opcode.test(0x01, 0x1F)) {
-        //AJMP addr11
-        this.PC.set(opcode.fetch_addr11())
     } else if (opcode.test(0x02)) {
         //LJMP addr16
         this.PC.set(this.fetch_const16())
@@ -86,10 +89,7 @@ _51cpu.prototype.__execute_decode_10_1F = function (opcode) {
             bit_cell.set(0)
             this.op_add_offset(offset_raw)
         }
-    } else if (opcode.test(0x11, 0x1F)) {
-        //ACALL 0x11
-        this.op_call(opcode.fetch_addr11())
-    } else if (opcode.test(0x12)) {
+    }  else if (opcode.test(0x12)) {
         //LCALL addr16
         let addr16 = this.fetch_const16()
         this.op_call(addr16)

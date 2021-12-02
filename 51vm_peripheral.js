@@ -1,10 +1,10 @@
-get_serial = function () {
+function get_serial() {
     return new Map([
         [0x98, "SCON"],
         [0x99, "SBUF"],
     ])
 }
-get_interrupt = function () {
+function get_interrupt() {
     return new Map([
         [0x88, "TCON"],
         [0xA8, "IE"],
@@ -12,7 +12,7 @@ get_interrupt = function () {
     ])
 }
 
-get_ports = function() { 
+function get_ports() { 
     return new Map([
          [0x80, "P0"],
          [0x90, "P1"],

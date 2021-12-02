@@ -102,7 +102,7 @@ _51cpu.prototype.op_add = function (mem_dest, mem_src, using_carry = false) {
     if (sum > 0xFF) {
         carry = 1
     }
-    if ((a & 0x0F) + (b & 0x0F) > 0x0F) {
+    if ((a & 0x0F) + (b & 0x0F) + psw_carry > 0x0F) {
         ac = 1
     }
 
