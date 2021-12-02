@@ -98,6 +98,6 @@ function install_default_peripherals(cpu){
         }
         return IRQN;
     }
-    cpu.irq.push(default_irq)
+    cpu.irq = default_irq
     
 }

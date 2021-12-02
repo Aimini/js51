@@ -17,8 +17,8 @@ _51cpu.prototype.execute_one = function () {
         }
     }
 
-    for (i of this.irq) {
-        let irqn = i();
+    if (this.irq) {
+        let irqn = this.irq();
         if (irqn >= 0) {
             this.op_call((irqn << 3) + 3)
         }

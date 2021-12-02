@@ -14,15 +14,16 @@ function reg(value = 0, bitlen = 8) {
 }
 
 reg.prototype.set = function (val) {
-    for (let one of this.setlistener) {
-        one(this._value, val);
-    }
+
     let oldval = this._value;
     this._value = val & this.max;
-    
+
+    for (let one of this.setlistener) {
+        one(oldval, val);
+    }
     if (oldval !== val){
         for (let one of this.changedlistener) {
-            one(this._value, val);
+            one(oldval, val);
         }
     }
     return this;
@@ -142,7 +143,7 @@ function _51cpu(IRAMSize = 0x100, XRAMSize = 0x10000) {
 
     this.interrupt_end_linstener = []
     this.addr_breakpoint = []
-    this.irq = []
+    this.irq = null
 }
 
 //------------------break point -----------------
